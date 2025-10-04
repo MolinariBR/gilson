@@ -11,6 +11,7 @@ import orderRouter from "./routes/orderRoute.js";
 import zoneRouter from "./routes/zoneRoute.js";
 import categoryRouter from "./routes/categoryRoute.js";
 import { logger, errorHandler } from "./utils/logger.js";
+import testRouter from "./routes/testRoute.js";
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -134,9 +135,17 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Middleware global para desabilitar Cloudflare em TODAS as respostas
+// Middleware global para debug e desabilitar Cloudflare
 app.use((req, res, next) => {
   const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+  
+  // Log detalhado para assets
+  if (req.url.includes('/assets/')) {
+    logger.assets.info(`🔍 REQUISIÇÃO ASSET: ${req.method} ${req.url}`);
+    logger.assets.info(`🔍 Headers: ${JSON.stringify(req.headers.accept)}`);
+    logger.assets.info(`🔍 User-Agent: ${req.headers['user-agent']}`);
+  }
+  
   logger.api.request(req.method, req.url, clientIP);
   
   // Headers anti-Cloudflare para TODAS as respostas
@@ -146,6 +155,7 @@ app.use((req, res, next) => {
   res.setHeader('CF-Polish', 'off');
   res.setHeader('CF-ScrapeShield', 'off');
   res.setHeader('Server', 'Express-Custom');
+  res.setHeader('X-Debug-Timestamp', Date.now().toString());
   
   next();
 });
@@ -212,6 +222,12 @@ app.get('/test-headers', (req, res) => {
   });
 });
 
+// Página de teste HTML para debug
+app.get('/debug-page', (req, res) => {
+  logger.backend.info('Servindo página de debug');
+  res.sendFile(path.join(__dirname, 'public/test.html'));
+});
+
 // Validate environment variables before starting
 validateEnvironmentVariables();
 
@@ -226,6 +242,9 @@ app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/zone", zoneRouter);
 app.use("/api", categoryRouter);
+
+// Rotas de teste para debug
+app.use("/test", testRouter);
 
 // Assets routes moved to top for priority
 

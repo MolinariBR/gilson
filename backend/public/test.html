@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Assets - Debug</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f0f0f0;
+        }
+        .test-section { 
+            background: white; 
+            padding: 20px; 
+            margin: 10px 0; 
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            cursor: pointer;
+            border: none;
+            border-radius: 3px;
+            background: #007bff;
+            color: white;
+        }
+        button:hover { background: #0056b3; }
+        #results { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Teste de Debug - Assets</h1>
+    
+    <div class="test-section">
+        <h2>1. Testes de Arquivos</h2>
+        <button onclick="checkFiles()">Verificar Existência dos Arquivos</button>
+        <button onclick="testDirectCSS()">Testar CSS Direto</button>
+        <button onclick="testDirectJS()">Testar JS Direto</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Testes de Requisições</h2>
+        <button onclick="testAssetCSS()">Testar /assets/index-C6a7aT4-.css</button>
+        <button onclick="testAssetJS()">Testar /assets/index-Bl7Y6Pke.js</button>
+        <button onclick="testHeaders()">Verificar Headers</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Testes de Simulação</h2>
+        <button onclick="simulateCSS()">Simular CSS</button>
+        <button onclick="simulateJS()">Simular JS</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Resultados</h2>
+        <div id="results">Clique nos botões acima para executar os testes...</div>
+    </div>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : '🔍';
+            results.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        async function makeRequest(url, description) {
+            log(`Fazendo requisição: ${description}`, 'info');
+            try {
+                const response = await fetch(url);
+                const contentType = response.headers.get('content-type');
+                const text = await response.text();
+                
+                log(`Status: ${response.status}`, response.ok ? 'success' : 'error');
+                log(`Content-Type: ${contentType}`, 'info');
+                log(`Tamanho: ${text.length} caracteres`, 'info');
+                log(`Primeiros 100 chars: ${text.substring(0, 100)}`, 'info');
+                log('---', 'info');
+                
+                return { response, text, contentType };
+            } catch (error) {
+                log(`Erro: ${error.message}`, 'error');
+                log('---', 'info');
+                return null;
+            }
+        }
+        
+        async function checkFiles() {
+            await makeRequest('/test/check-files', 'Verificação de arquivos');
+        }
+        
+        async function testDirectCSS() {
+            await makeRequest('/test/direct-css', 'CSS direto');
+        }
+        
+        async function testDirectJS() {
+            await makeRequest('/test/direct-js', 'JS direto');
+        }
+        
+        async function testAssetCSS() {
+            await makeRequest('/assets/index-C6a7aT4-.css', 'Asset CSS via /assets');
+        }
+        
+        async function testAssetJS() {
+            await makeRequest('/assets/index-Bl7Y6Pke.js', 'Asset JS via /assets');
+        }
+        
+        async function testHeaders() {
+            await makeRequest('/test/check-headers', 'Verificação de headers');
+        }
+        
+        async function simulateCSS() {
+            await makeRequest('/test/simulate-asset/index-C6a7aT4-.css', 'Simulação CSS');
+        }
+        
+        async function simulateJS() {
+            await makeRequest('/test/simulate-asset/index-Bl7Y6Pke.js', 'Simulação JS');
+        }
+        
+        // Auto-executar alguns testes básicos
+        window.onload = function() {
+            log('Página de teste carregada', 'success');
+            log('Execute os testes clicando nos botões acima', 'info');
+        };
+    </script>
+</body>
+</html>
