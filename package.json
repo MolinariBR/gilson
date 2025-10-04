@@ -30,6 +30,8 @@
     "squarecloud:build": "npm run install:all && npm run build:all && npm run squarecloud:prepare",
     "squarecloud:start": "cd backend && npm start",
     "squarecloud:prepare": "node scripts/prepare-squarecloud.js",
+    "squarecloud:validate": "node scripts/validate-squarecloud-config.js",
+    "squarecloud:test": "node scripts/test-squarecloud-deployment.js",
     "postinstall": "cd backend && npm install"
   },
   "keywords": [
