@@ -149,42 +149,32 @@ app.use("/api/order", orderRouter);
 app.use("/api/zone", zoneRouter);
 app.use("/api", categoryRouter);
 
-// Serve static assets with explicit MIME types BEFORE catch-all routes
-app.use("/assets", express.static(path.join(__dirname, "../frontend/dist/assets"), {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css');
-    } else if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript');
-    } else if (filePath.endsWith('.png')) {
-      res.setHeader('Content-Type', 'image/png');
-    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/jpeg');
-    } else if (filePath.endsWith('.svg')) {
-      res.setHeader('Content-Type', 'image/svg+xml');
-    }
+// Middleware to set correct MIME types for all static files
+const setMimeTypes = (res, filePath) => {
+  if (filePath.endsWith('.css')) {
+    res.setHeader('Content-Type', 'text/css');
+  } else if (filePath.endsWith('.js')) {
+    res.setHeader('Content-Type', 'application/javascript');
+  } else if (filePath.endsWith('.png')) {
+    res.setHeader('Content-Type', 'image/png');
+  } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+    res.setHeader('Content-Type', 'image/jpeg');
+  } else if (filePath.endsWith('.svg')) {
+    res.setHeader('Content-Type', 'image/svg+xml');
+  } else if (filePath.endsWith('.ico')) {
+    res.setHeader('Content-Type', 'image/x-icon');
   }
+};
+
+// Serve admin static files with correct MIME types
+app.use("/admin", express.static(path.join(__dirname, "../admin/dist"), {
+  setHeaders: setMimeTypes
 }));
 
-app.use("/admin/assets", express.static(path.join(__dirname, "../admin/dist/assets"), {
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css');
-    } else if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript');
-    } else if (filePath.endsWith('.png')) {
-      res.setHeader('Content-Type', 'image/png');
-    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/jpeg');
-    } else if (filePath.endsWith('.svg')) {
-      res.setHeader('Content-Type', 'image/svg+xml');
-    }
-  }
+// Serve frontend static files with correct MIME types  
+app.use("/", express.static(path.join(__dirname, "../frontend/dist"), {
+  setHeaders: setMimeTypes
 }));
-
-// Serve other static files
-app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
-app.use("/", express.static(path.join(__dirname, "../frontend/dist")));
 
 // Handle SPA routing ONLY for HTML pages (not assets)
 app.get("*", (req, res) => {
