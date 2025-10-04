@@ -165,7 +165,9 @@ app.use('/assets', (req, res, next) => {
   logger.assets.info(`Interceptando asset: ${req.method} ${req.path}`);
   
   try {
-    // FORCE return CSS content directly
+    // NOVOS NOMES DOS ARQUIVOS APÓS REBUILD
+    
+    // Frontend CSS (mesmo nome)
     if (req.path.includes('index-C6a7aT4-.css')) {
       logger.assets.info('Servindo CSS do frontend');
       res.setHeader('Content-Type', 'text/css');
@@ -173,31 +175,42 @@ app.use('/assets', (req, res, next) => {
       return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
     }
     
-    if (req.path.includes('index-Bl7Y6Pke.js')) {
+    // Frontend JS (NOVO NOME)
+    if (req.path.includes('index-DQa1iJSy.js')) {
       logger.assets.info('Servindo JS do frontend - forçando MIME type');
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('CF-Cache-Status', 'BYPASS');
       res.setHeader('CF-Rocket-Loader', 'off');
-      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'));
+      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-DQa1iJSy.js'));
     }
     
-    if (req.path.includes('index-CAabumZp.css')) {
+    // Admin CSS (NOVO NOME)
+    if (req.path.includes('index-B03NhcvP.css')) {
       logger.assets.info('Servindo CSS do admin');
       res.setHeader('Content-Type', 'text/css');
       res.setHeader('Cache-Control', 'no-cache');
-      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-CAabumZp.css'));
+      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-B03NhcvP.css'));
     }
     
-    if (req.path.includes('index-Dnk9WlHB.js')) {
+    // Admin JS (NOVO NOME)
+    if (req.path.includes('index-r_bhB-z9.js')) {
       logger.assets.info('Servindo JS do admin - forçando MIME type');
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('CF-Cache-Status', 'BYPASS');
       res.setHeader('CF-Rocket-Loader', 'off');
-      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-Dnk9WlHB.js'));
+      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-r_bhB-z9.js'));
+    }
+    
+    // MANTER COMPATIBILIDADE COM NOMES ANTIGOS (para cache)
+    if (req.path.includes('index-Bl7Y6Pke.js') || req.path.includes('index-Dnk9WlHB.js') || req.path.includes('index-CAabumZp.css')) {
+      logger.assets.info('Redirecionando arquivo antigo para novo');
+      return res.redirect(301, req.path.replace('index-Bl7Y6Pke.js', 'index-DQa1iJSy.js')
+                                      .replace('index-Dnk9WlHB.js', 'index-r_bhB-z9.js')
+                                      .replace('index-CAabumZp.css', 'index-B03NhcvP.css'));
     }
     
     logger.assets.error(`Asset não encontrado: ${req.path}`);
