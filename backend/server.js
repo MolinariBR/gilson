@@ -206,11 +206,31 @@ app.use('/assets', (req, res, next) => {
     }
     
     // MANTER COMPATIBILIDADE COM NOMES ANTIGOS (para cache)
-    if (req.path.includes('index-Bl7Y6Pke.js') || req.path.includes('index-Dnk9WlHB.js') || req.path.includes('index-CAabumZp.css')) {
-      logger.assets.info('Redirecionando arquivo antigo para novo');
-      return res.redirect(301, req.path.replace('index-Bl7Y6Pke.js', 'index-DQa1iJSy.js')
-                                      .replace('index-Dnk9WlHB.js', 'index-r_bhB-z9.js')
-                                      .replace('index-CAabumZp.css', 'index-B03NhcvP.css'));
+    if (req.path.includes('index-Bl7Y6Pke.js')) {
+      logger.assets.info('Redirecionando JS antigo do frontend para novo');
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('CF-Cache-Status', 'BYPASS');
+      res.setHeader('CF-Rocket-Loader', 'off');
+      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-DQa1iJSy.js'));
+    }
+    
+    if (req.path.includes('index-Dnk9WlHB.js')) {
+      logger.assets.info('Redirecionando JS antigo do admin para novo');
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('CF-Cache-Status', 'BYPASS');
+      res.setHeader('CF-Rocket-Loader', 'off');
+      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-r_bhB-z9.js'));
+    }
+    
+    if (req.path.includes('index-CAabumZp.css')) {
+      logger.assets.info('Redirecionando CSS antigo do admin para novo');
+      res.setHeader('Content-Type', 'text/css');
+      res.setHeader('Cache-Control', 'no-cache');
+      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-B03NhcvP.css'));
     }
     
     logger.assets.error(`Asset não encontrado: ${req.path}`);
@@ -259,6 +279,44 @@ app.use("/api", categoryRouter);
 // Rotas de teste para debug
 app.use("/test", testRouter);
 
+// Interceptar arquivos JS que são requisitados diretamente na raiz
+app.get('/index-*.js', (req, res) => {
+  logger.assets.info(`Interceptando JS na raiz: ${req.path}`);
+  
+  if (req.path.includes('index-DQa1iJSy.js')) {
+    logger.assets.info('Servindo JS do frontend da raiz');
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
+    res.setHeader('CF-Rocket-Loader', 'off');
+    return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-DQa1iJSy.js'));
+  }
+  
+  if (req.path.includes('index-r_bhB-z9.js')) {
+    logger.assets.info('Servindo JS do admin da raiz');
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
+    res.setHeader('CF-Rocket-Loader', 'off');
+    return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-r_bhB-z9.js'));
+  }
+  
+  // Arquivos antigos
+  if (req.path.includes('index-Bl7Y6Pke.js')) {
+    logger.assets.info('Redirecionando JS antigo do frontend (raiz)');
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
+    res.setHeader('CF-Rocket-Loader', 'off');
+    return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-DQa1iJSy.js'));
+  }
+  
+  res.status(404).send('JS file not found');
+});
+
 // Assets routes moved to top for priority
 
 // REMOVED: Duplicate assets route that was overriding the priority one
@@ -281,7 +339,22 @@ const disableCloudflareOptimizations = (res) => {
   res.setHeader('CF-Polish', 'off');
   res.setHeader('CF-ScrapeShield', 'off');
   res.setHeader('X-Robots-Tag', 'noindex, nofollow, nosnippet, noarchive');
+  res.setHeader('X-Force-Refresh', Date.now().toString());
 };
+
+// Rota específica para forçar refresh do frontend
+app.get('/force-refresh', (req, res) => {
+  logger.backend.info('Forçando refresh do frontend');
+  disableCloudflareOptimizations(res);
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
+
+// Rota específica para forçar refresh do admin
+app.get('/admin/force-refresh', (req, res) => {
+  logger.backend.info('Forçando refresh do admin');
+  disableCloudflareOptimizations(res);
+  res.sendFile(path.join(__dirname, '../admin/dist/index.html'));
+});
 
 // Handle SPA routing ONLY for HTML pages (not assets)
 app.get("*", (req, res) => {
