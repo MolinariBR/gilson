@@ -14,9 +14,9 @@ router.get('/check-files', (req, res) => {
   
   const files = [
     { name: 'Frontend CSS', path: path.join(__dirname, '../../frontend/dist/assets/index-C6a7aT4-.css') },
-    { name: 'Frontend JS', path: path.join(__dirname, '../../frontend/dist/assets/index-Bl7Y6Pke.js') },
-    { name: 'Admin CSS', path: path.join(__dirname, '../../admin/dist/assets/index-CAabumZp.css') },
-    { name: 'Admin JS', path: path.join(__dirname, '../../admin/dist/assets/index-Dnk9WlHB.js') }
+    { name: 'Frontend JS', path: path.join(__dirname, '../../frontend/dist/assets/index-DQa1iJSy.js') },
+    { name: 'Admin CSS', path: path.join(__dirname, '../../admin/dist/assets/index-B03NhcvP.css') },
+    { name: 'Admin JS', path: path.join(__dirname, '../../admin/dist/assets/index-r_bhB-z9.js') }
   ];
   
   const results = files.map(file => {
@@ -79,7 +79,7 @@ router.get('/direct-css', (req, res) => {
 router.get('/direct-js', (req, res) => {
   logger.backend.info('🎯 Servindo JS diretamente...');
   
-  const jsPath = path.join(__dirname, '../../frontend/dist/assets/index-Bl7Y6Pke.js');
+  const jsPath = path.join(__dirname, '../../frontend/dist/assets/index-DQa1iJSy.js');
   
   if (!fs.existsSync(jsPath)) {
     logger.backend.error('❌ Arquivo JS não encontrado');
@@ -143,7 +143,7 @@ router.get('/simulate-asset/:filename', (req, res) => {
     return res.send('/* CSS simulado */\nbody { background: red; }');
   }
   
-  if (filename.includes('index-Bl7Y6Pke.js')) {
+  if (filename.includes('index-DQa1iJSy.js')) {
     logger.backend.info('📄 Simulando JS do frontend');
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('X-Simulated', 'true');
