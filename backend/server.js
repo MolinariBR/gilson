@@ -134,6 +134,31 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// PRIORITY: Handle assets FIRST before any other routes
+app.get('/assets/index-CAabumZp.css', (req, res) => {
+  console.log('🎯 Serving admin CSS with correct MIME type');
+  res.setHeader('Content-Type', 'text/css');
+  res.sendFile(path.join(__dirname, '../admin/dist/assets/index-CAabumZp.css'));
+});
+
+app.get('/assets/index-Dnk9WlHB.js', (req, res) => {
+  console.log('🎯 Serving admin JS with correct MIME type');
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, '../admin/dist/assets/index-Dnk9WlHB.js'));
+});
+
+app.get('/assets/index-C6a7aT4-.css', (req, res) => {
+  console.log('🎯 Serving frontend CSS with correct MIME type');
+  res.setHeader('Content-Type', 'text/css');
+  res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
+});
+
+app.get('/assets/index-Bl7Y6Pke.js', (req, res) => {
+  console.log('🎯 Serving frontend JS with correct MIME type');
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'));
+});
+
 // Validate environment variables before starting
 validateEnvironmentVariables();
 
@@ -149,26 +174,7 @@ app.use("/api/order", orderRouter);
 app.use("/api/zone", zoneRouter);
 app.use("/api", categoryRouter);
 
-// Explicit routes for problematic assets
-app.get('/assets/index-CAabumZp.css', (req, res) => {
-  res.setHeader('Content-Type', 'text/css');
-  res.sendFile(path.join(__dirname, '../admin/dist/assets/index-CAabumZp.css'));
-});
-
-app.get('/assets/index-Dnk9WlHB.js', (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
-  res.sendFile(path.join(__dirname, '../admin/dist/assets/index-Dnk9WlHB.js'));
-});
-
-app.get('/assets/index-C6a7aT4-.css', (req, res) => {
-  res.setHeader('Content-Type', 'text/css');
-  res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
-});
-
-app.get('/assets/index-Bl7Y6Pke.js', (req, res) => {
-  res.setHeader('Content-Type', 'application/javascript');
-  res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'));
-});
+// Assets routes moved to top for priority
 
 // Generic assets route for other files
 app.use('/assets', (req, res, next) => {
