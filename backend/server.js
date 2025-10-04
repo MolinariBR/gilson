@@ -149,33 +149,48 @@ app.use("/api/order", orderRouter);
 app.use("/api/zone", zoneRouter);
 app.use("/api", categoryRouter);
 
-// Serve static files for frontend and admin with proper MIME types
-app.use("/admin", express.static(path.join(__dirname, "../admin/dist"), {
+// Serve static assets with explicit MIME types BEFORE catch-all routes
+app.use("/assets", express.static(path.join(__dirname, "../frontend/dist/assets"), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.css')) {
       res.setHeader('Content-Type', 'text/css');
     } else if (filePath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript');
+    } else if (filePath.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (filePath.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
     }
   }
 }));
 
-app.use("/", express.static(path.join(__dirname, "../frontend/dist"), {
+app.use("/admin/assets", express.static(path.join(__dirname, "../admin/dist/assets"), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.css')) {
       res.setHeader('Content-Type', 'text/css');
     } else if (filePath.endsWith('.js')) {
       res.setHeader('Content-Type', 'application/javascript');
+    } else if (filePath.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (filePath.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
     }
   }
 }));
 
-// Handle SPA routing for frontend (only for non-static files)
-app.get("/*", (req, res) => {
-  // Skip static files (they should be handled by express.static above)
-  if (req.path.includes('.css') || req.path.includes('.js') || req.path.includes('.png') || 
-      req.path.includes('.jpg') || req.path.includes('.ico') || req.path.includes('.svg')) {
-    return res.status(404).send('File not found');
+// Serve other static files
+app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
+app.use("/", express.static(path.join(__dirname, "../frontend/dist")));
+
+// Handle SPA routing ONLY for HTML pages (not assets)
+app.get("*", (req, res) => {
+  // If it's an assets request that wasn't handled above, return 404
+  if (req.path.startsWith('/assets/') || req.path.startsWith('/admin/assets/')) {
+    return res.status(404).send('Asset not found');
   }
   
   // If it's an admin route, serve admin index.html
