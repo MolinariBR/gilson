@@ -132,3 +132,12 @@ mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/tomato-delivery-prod?
 - **Se ainda houver erro de variáveis**: Verifique se todas foram salvas corretamente
 - **Se houver erro de conexão MongoDB**: Verifique a string de conexão e whitelist
 - **Se houver erro 500**: Verifique os logs no painel do SquareCloud
+- **Se houver erro de porta**: Certifique-se que PORT=4000 (não 80)
+- **Se categorias não funcionarem**: Verifique se as variáveis CATEGORY_* foram configuradas
+
+## 🔒 Segurança:
+
+⚠️ **NUNCA** compartilhe suas variáveis de ambiente reais em repositórios públicos!
+- Use valores placeholder como `[SUBSTITUA]` em documentação
+- Mantenha JWT_SECRET com pelo menos 32 caracteres
+- Use sempre HTTPS em produção
