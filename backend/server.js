@@ -149,32 +149,58 @@ app.use("/api/order", orderRouter);
 app.use("/api/zone", zoneRouter);
 app.use("/api", categoryRouter);
 
-// Middleware to set correct MIME types for all static files
-const setMimeTypes = (res, filePath) => {
+// Explicit routes for problematic assets
+app.get('/assets/index-CAabumZp.css', (req, res) => {
+  res.setHeader('Content-Type', 'text/css');
+  res.sendFile(path.join(__dirname, '../admin/dist/assets/index-CAabumZp.css'));
+});
+
+app.get('/assets/index-Dnk9WlHB.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, '../admin/dist/assets/index-Dnk9WlHB.js'));
+});
+
+app.get('/assets/index-C6a7aT4-.css', (req, res) => {
+  res.setHeader('Content-Type', 'text/css');
+  res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
+});
+
+app.get('/assets/index-Bl7Y6Pke.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'));
+});
+
+// Generic assets route for other files
+app.use('/assets', (req, res, next) => {
+  const filePath = req.path;
   if (filePath.endsWith('.css')) {
     res.setHeader('Content-Type', 'text/css');
   } else if (filePath.endsWith('.js')) {
     res.setHeader('Content-Type', 'application/javascript');
   } else if (filePath.endsWith('.png')) {
     res.setHeader('Content-Type', 'image/png');
-  } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-    res.setHeader('Content-Type', 'image/jpeg');
-  } else if (filePath.endsWith('.svg')) {
-    res.setHeader('Content-Type', 'image/svg+xml');
-  } else if (filePath.endsWith('.ico')) {
-    res.setHeader('Content-Type', 'image/x-icon');
   }
-};
+  
+  // Try frontend assets first
+  const frontendAssetPath = path.join(__dirname, '../frontend/dist/assets', filePath);
+  if (require('fs').existsSync(frontendAssetPath)) {
+    return res.sendFile(frontendAssetPath);
+  }
+  
+  // Then try admin assets
+  const adminAssetPath = path.join(__dirname, '../admin/dist/assets', filePath);
+  if (require('fs').existsSync(adminAssetPath)) {
+    return res.sendFile(adminAssetPath);
+  }
+  
+  res.status(404).send('Asset not found');
+});
 
-// Serve admin static files with correct MIME types
-app.use("/admin", express.static(path.join(__dirname, "../admin/dist"), {
-  setHeaders: setMimeTypes
-}));
+// Serve admin static files
+app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
 
-// Serve frontend static files with correct MIME types  
-app.use("/", express.static(path.join(__dirname, "../frontend/dist"), {
-  setHeaders: setMimeTypes
-}));
+// Serve frontend static files  
+app.use("/", express.static(path.join(__dirname, "../frontend/dist")));
 
 // Handle SPA routing ONLY for HTML pages (not assets)
 app.get("*", (req, res) => {
