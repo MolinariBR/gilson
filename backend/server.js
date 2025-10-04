@@ -2,10 +2,10 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 import { connectDB } from "./config/db.js";
 import foodRouter from "./routes/foodRoute.js";
 import userRouter from "./routes/userRoute.js";
-import "dotenv/config";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
 import zoneRouter from "./routes/zoneRoute.js";
@@ -14,6 +14,18 @@ import categoryRouter from "./routes/categoryRoute.js";
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load environment variables from multiple locations
+dotenv.config({ path: path.join(__dirname, '.env') }); // backend/.env
+dotenv.config({ path: path.join(__dirname, '..', '.env') }); // root .env
+
+// Debug: Log loaded environment variables (remove in production)
+console.log('🔍 Environment variables loaded:');
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅ Set' : '❌ Missing');
+console.log('MONGO_URL:', process.env.MONGO_URL ? '✅ Set' : '❌ Missing');
+console.log('MERCADOPAGO_ACCESS_TOKEN:', process.env.MERCADOPAGO_ACCESS_TOKEN ? '✅ Set' : '❌ Missing');
+console.log('FRONTEND_URL:', process.env.FRONTEND_URL ? '✅ Set' : '❌ Missing');
+console.log('BACKEND_URL:', process.env.BACKEND_URL ? '✅ Set' : '❌ Missing');
 
 // Environment variable validation
 const validateEnvironmentVariables = () => {
