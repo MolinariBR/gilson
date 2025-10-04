@@ -1,0 +1,318 @@
+.zones {
+    width: 70%;
+    margin-left: max(5vw, 25px);
+    margin-top: 50px;
+    color: #6d6d6d;
+    font-size: 16px;
+}
+
+.zones-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.zones-header h3 {
+    color: #333;
+    margin: 0;
+}
+
+.add-zone-btn {
+    background-color: #ff6347;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.add-zone-btn:hover:not(:disabled) {
+    background-color: #e5533d;
+}
+
+.add-zone-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.zone-form-container {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.zone-form {
+    gap: 20px;
+}
+
+.zone-form h4 {
+    margin: 0 0 20px 0;
+    color: #333;
+}
+
+.form-group {
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    max-width: 300px;
+}
+
+.neighborhood-input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.neighborhood-input input {
+    flex: 1;
+    max-width: 250px;
+}
+
+.remove-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.remove-btn:hover {
+    background-color: #c82333;
+}
+
+.add-neighborhood-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    align-self: flex-start;
+}
+
+.add-neighborhood-btn:hover {
+    background-color: #218838;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.submit-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.submit-btn:hover {
+    background-color: #0056b3;
+}
+
+.cancel-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.cancel-btn:hover {
+    background-color: #545b62;
+}
+
+.zones-table-format {
+    display: grid;
+    grid-template-columns: 1fr 2fr 0.8fr 1fr;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid #cacaca;
+    font-size: 14px;
+}
+
+.zones-table-format.title {
+    background-color: #f9f9f9;
+    font-weight: 600;
+}
+
+.neighborhoods-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.neighborhood-tag {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    border: 1px solid #dee2e6;
+}
+
+.status {
+    font-weight: 600;
+}
+
+.status.active {
+    color: #28a745;
+}
+
+.status.inactive {
+    color: #dc3545;
+}
+
+.zone-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-btn {
+    background-color: #ffc107;
+    color: #212529;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.edit-btn:hover:not(:disabled) {
+    background-color: #e0a800;
+}
+
+.edit-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.delete-btn:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+.delete-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.no-zones {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.no-zones p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1000px) {
+    .zones {
+        width: 90%;
+        margin-left: 15px;
+    }
+    
+    .zones-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .zones-table-format {
+        grid-template-columns: 1fr 2fr;
+        gap: 10px;
+        font-size: 12px;
+    }
+    
+    .zones-table-format .status,
+    .zones-table-format .zone-actions {
+        grid-column: 1 / -1;
+        margin-top: 10px;
+    }
+    
+    .zone-form-container {
+        padding: 15px;
+    }
+    
+    .form-group input {
+        max-width: 100%;
+    }
+    
+    .neighborhood-input {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+    
+    .neighborhood-input input {
+        max-width: 100%;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .submit-btn,
+    .cancel-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .zones-table-format.title {
+        display: none;
+    }
+    
+    .zones-table-format {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 12px;
+    }
+    
+    .neighborhoods-list {
+        margin: 5px 0;
+    }
+    
+    .zone-actions {
+        justify-content: flex-start;
+        margin-top: 10px;
+    }
+}

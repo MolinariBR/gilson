@@ -1,0 +1,28 @@
+# Dependencies (will be installed by SquareCloud)
+node_modules/
+*/node_modules/
+
+# Development files
+.git/
+.kiro/
+*.log
+.env.local
+.env.development
+
+# Test files
+**/test/
+**/tests/
+**/*.test.js
+**/*.test.jsx
+vitest.config.js
+
+# Documentation
+*.md
+!README.md
+
+# Development scripts
+prepare-squarecloud-deploy.js
+
+# Uploads (will be created at runtime)
+backend/uploads/*
+!backend/uploads/.gitkeep

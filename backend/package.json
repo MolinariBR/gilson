@@ -1,0 +1,48 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "server": "nodemon server.js",
+    "start": "node server.js",
+    "build": "echo 'Backend build complete'",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:e2e": "vitest --run tests/e2e/",
+    "test:e2e:watch": "vitest tests/e2e/",
+    "validate-config": "node scripts/validateConfig.js",
+    "create-admin": "node scripts/createAdmin.js",
+    "migrate": "node scripts/runFullMigration.js",
+    "migrate:categories": "node scripts/runCategoryMigration.js migrate",
+    "migrate:categories:rollback": "node scripts/runCategoryMigration.js rollback",
+    "migrate:categories:validate": "node scripts/runCategoryMigration.js validate",
+    "migrate:food": "node migrations/migrateFoodCategories.js migrate",
+    "migrate:food:rollback": "node migrations/migrateFoodCategories.js rollback",
+    "migrate:food:validate": "node migrations/migrateFoodCategories.js validate",
+    "migrate:full": "node scripts/runFullCategoryMigration.js migrate",
+    "migrate:full:validate": "node scripts/runFullCategoryMigration.js validate"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mercadopago": "^2.9.0",
+    "mongoose": "^8.5.2",
+    "multer": "^1.4.5-lts.1",
+    "nodemon": "^3.1.4",
+    "validator": "^13.12.0"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^10.2.1",
+    "supertest": "^7.1.4",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "name": "tomato-food-delivery",
+  "version": "1.0.0",
+  "description": "TOMATO Food Delivery Application with MercadoPago Integration",
+  "scripts": {
+    "configure:dev": "node scripts/configure-urls.js development",
+    "configure:prod": "node scripts/configure-urls.js production",
+    "validate:config": "node scripts/validate-config.js",
+    "validate:dev": "node scripts/validate-config.js development",
+    "validate:prod": "node scripts/validate-config.js production",
+    "install:all": "npm install && cd frontend && npm install && cd ../admin && npm install && cd ../backend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:admin": "cd admin && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "build:admin": "cd admin && npm run build",
+    "build:all": "npm run build:frontend && npm run build:admin",
+    "start": "cd backend && npm start",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm run test:run",
+    "test:admin": "cd admin && npm run test:run",
+    "test:all": "npm run test:backend && npm run test:frontend && npm run test:admin",
+    "test:integration": "bash scripts/test-integration.sh",
+    "setup:dev": "npm run configure:dev && npm run validate:dev && npm run install:all",
+    "setup:prod": "npm run configure:prod && npm run validate:prod",
+    "deploy:dev": "bash scripts/deploy.sh development",
+    "deploy:prod": "bash scripts/deploy.sh production",
+    "migrate:categories": "cd backend && npm run migrate:categories",
+    "migrate:validate": "cd backend && npm run migrate:categories:validate",
+    "squarecloud:build": "npm run install:all && npm run build:all && npm run squarecloud:prepare",
+    "squarecloud:start": "cd backend && npm start",
+    "squarecloud:prepare": "node scripts/prepare-squarecloud.js",
+    "postinstall": "cd backend && npm install"
+  },
+  "keywords": [
+    "food-delivery",
+    "react",
+    "nodejs",
+    "mercadopago",
+    "mongodb"
+  ],
+  "author": "TOMATO Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "form-data": "^4.0.4",
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mercadopago": "^2.9.0",
+    "mongoose": "^8.5.2",
+    "multer": "^1.4.5-lts.1",
+    "nodemon": "^3.1.4",
+    "validator": "^13.12.0"
+  }
+}
