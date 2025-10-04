@@ -150,9 +150,11 @@ app.use('/assets', (req, res, next) => {
   
   if (req.path.includes('index-Bl7Y6Pke.js')) {
     console.log('🚨 SERVING FRONTEND JS - FORCING MIME TYPE');
-    res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
+    res.setHeader('CF-Rocket-Loader', 'off');
     return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'));
   }
   
@@ -165,9 +167,11 @@ app.use('/assets', (req, res, next) => {
   
   if (req.path.includes('index-Dnk9WlHB.js')) {
     console.log('🚨 SERVING ADMIN JS - FORCING MIME TYPE');
-    res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
+    res.setHeader('CF-Rocket-Loader', 'off');
     return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-Dnk9WlHB.js'));
   }
   
@@ -212,12 +216,18 @@ app.get("*", (req, res) => {
   
   // If it's an admin route, serve admin index.html
   if (req.path.startsWith('/admin')) {
+    // Disable Cloudflare optimizations that interfere with MIME types
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
     res.sendFile(path.join(__dirname, '../admin/dist/index.html'));
   } else if (req.path.startsWith('/api')) {
     // API routes that don't exist
     res.status(404).json({ success: false, message: "API endpoint not found" });
   } else {
     // Serve frontend index.html for all other routes
+    // Disable Cloudflare optimizations that interfere with MIME types
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   }
 });
