@@ -283,38 +283,65 @@ app.use("/test", testRouter);
 app.get('/index-*.js', (req, res) => {
   logger.assets.info(`Interceptando JS na raiz: ${req.path}`);
   
-  if (req.path.includes('index-DQa1iJSy.js')) {
-    logger.assets.info('Servindo JS do frontend da raiz');
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('CF-Cache-Status', 'BYPASS');
-    res.setHeader('CF-Rocket-Loader', 'off');
-    return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-DQa1iJSy.js'));
+  try {
+    if (req.path.includes('index-DQa1iJSy.js')) {
+      const filePath = path.join(__dirname, '../frontend/dist/assets/index-DQa1iJSy.js');
+      logger.assets.info(`Servindo JS do frontend da raiz: ${filePath}`);
+      
+      if (!require('fs').existsSync(filePath)) {
+        logger.assets.error(`Arquivo não encontrado: ${filePath}`);
+        return res.status(404).send('Frontend JS file not found');
+      }
+      
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('CF-Cache-Status', 'BYPASS');
+      res.setHeader('CF-Rocket-Loader', 'off');
+      return res.sendFile(filePath);
+    }
+    
+    if (req.path.includes('index-r_bhB-z9.js')) {
+      const filePath = path.join(__dirname, '../admin/dist/assets/index-r_bhB-z9.js');
+      logger.assets.info(`Servindo JS do admin da raiz: ${filePath}`);
+      
+      if (!require('fs').existsSync(filePath)) {
+        logger.assets.error(`Arquivo não encontrado: ${filePath}`);
+        return res.status(404).send('Admin JS file not found');
+      }
+      
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('CF-Cache-Status', 'BYPASS');
+      res.setHeader('CF-Rocket-Loader', 'off');
+      return res.sendFile(filePath);
+    }
+    
+    // Arquivos antigos
+    if (req.path.includes('index-Bl7Y6Pke.js')) {
+      const filePath = path.join(__dirname, '../frontend/dist/assets/index-DQa1iJSy.js');
+      logger.assets.info(`Redirecionando JS antigo do frontend (raiz): ${filePath}`);
+      
+      if (!require('fs').existsSync(filePath)) {
+        logger.assets.error(`Arquivo não encontrado: ${filePath}`);
+        return res.status(404).send('Frontend JS file not found');
+      }
+      
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('CF-Cache-Status', 'BYPASS');
+      res.setHeader('CF-Rocket-Loader', 'off');
+      return res.sendFile(filePath);
+    }
+    
+    logger.assets.error(`JS não reconhecido na raiz: ${req.path}`);
+    res.status(404).send('JS file not found');
+  } catch (error) {
+    logger.assets.error(`Erro ao servir JS da raiz ${req.path}:`, error);
+    res.status(500).send('Internal server error');
   }
-  
-  if (req.path.includes('index-r_bhB-z9.js')) {
-    logger.assets.info('Servindo JS do admin da raiz');
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('CF-Cache-Status', 'BYPASS');
-    res.setHeader('CF-Rocket-Loader', 'off');
-    return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-r_bhB-z9.js'));
-  }
-  
-  // Arquivos antigos
-  if (req.path.includes('index-Bl7Y6Pke.js')) {
-    logger.assets.info('Redirecionando JS antigo do frontend (raiz)');
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('CF-Cache-Status', 'BYPASS');
-    res.setHeader('CF-Rocket-Loader', 'off');
-    return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-DQa1iJSy.js'));
-  }
-  
-  res.status(404).send('JS file not found');
 });
 
 // Assets routes moved to top for priority
