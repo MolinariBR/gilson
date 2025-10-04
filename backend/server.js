@@ -82,6 +82,45 @@ const validateEnvironmentVariables = () => {
 const app = express();
 const port = process.env.PORT || 4000;
 
+// ABSOLUTE PRIORITY: Handle assets BEFORE ANY middleware
+app.use('/assets', (req, res, next) => {
+  console.log(`🚨 CRITICAL ASSETS INTERCEPTOR: ${req.method} ${req.path}`);
+  console.log(`🚨 Full URL: ${req.url}`);
+  
+  const fileName = req.path.substring(1); // Remove leading slash
+  console.log(`🚨 Looking for file: ${fileName}`);
+  
+  // Force MIME type based on file extension
+  if (fileName.endsWith('.css')) {
+    res.setHeader('Content-Type', 'text/css');
+    console.log('🚨 FORCING CSS MIME TYPE');
+  } else if (fileName.endsWith('.js')) {
+    res.setHeader('Content-Type', 'application/javascript');
+    console.log('🚨 FORCING JS MIME TYPE');
+  }
+  
+  // Try to serve from admin assets first
+  const adminAssetPath = path.join(__dirname, '../admin/dist/assets', fileName);
+  console.log(`🚨 Checking admin path: ${adminAssetPath}`);
+  
+  if (require('fs').existsSync(adminAssetPath)) {
+    console.log(`🚨 SERVING FROM ADMIN: ${adminAssetPath}`);
+    return res.sendFile(adminAssetPath);
+  }
+  
+  // Then try frontend assets
+  const frontendAssetPath = path.join(__dirname, '../frontend/dist/assets', fileName);
+  console.log(`🚨 Checking frontend path: ${frontendAssetPath}`);
+  
+  if (require('fs').existsSync(frontendAssetPath)) {
+    console.log(`🚨 SERVING FROM FRONTEND: ${frontendAssetPath}`);
+    return res.sendFile(frontendAssetPath);
+  }
+  
+  console.log(`🚨 ASSET NOT FOUND: ${fileName}`);
+  res.status(404).send('Asset not found');
+});
+
 //middlewares
 app.use(express.json());
 
@@ -134,40 +173,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// CRITICAL: Intercept ALL /assets requests BEFORE any other middleware
-app.use('/assets', (req, res, next) => {
-  console.log(`🔍 Assets request intercepted: ${req.path}`);
-  
-  const fileName = req.path.substring(1); // Remove leading slash
-  
-  // Set MIME type based on file extension
-  if (fileName.endsWith('.css')) {
-    res.setHeader('Content-Type', 'text/css');
-    console.log('🎯 Setting CSS MIME type');
-  } else if (fileName.endsWith('.js')) {
-    res.setHeader('Content-Type', 'application/javascript');
-    console.log('🎯 Setting JS MIME type');
-  } else if (fileName.endsWith('.png')) {
-    res.setHeader('Content-Type', 'image/png');
-  }
-  
-  // Try to serve from admin assets first
-  const adminAssetPath = path.join(__dirname, '../admin/dist/assets', fileName);
-  if (require('fs').existsSync(adminAssetPath)) {
-    console.log(`✅ Serving from admin: ${adminAssetPath}`);
-    return res.sendFile(adminAssetPath);
-  }
-  
-  // Then try frontend assets
-  const frontendAssetPath = path.join(__dirname, '../frontend/dist/assets', fileName);
-  if (require('fs').existsSync(frontendAssetPath)) {
-    console.log(`✅ Serving from frontend: ${frontendAssetPath}`);
-    return res.sendFile(frontendAssetPath);
-  }
-  
-  console.log(`❌ Asset not found: ${fileName}`);
-  res.status(404).send('Asset not found');
-});
+// Assets middleware moved to absolute top priority
 
 // Validate environment variables before starting
 validateEnvironmentVariables();
