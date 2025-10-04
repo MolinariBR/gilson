@@ -175,15 +175,15 @@ app.use('/assets', (req, res, next) => {
       return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
     }
     
-    // Frontend JS (NOVO NOME)
-    if (req.path.includes('index-DQa1iJSy.js')) {
+    // Frontend JS (NOVO NOME FINAL)
+    if (req.path.includes('index-A0OTgVYs.js')) {
       logger.assets.info('Servindo JS do frontend - forçando MIME type');
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('CF-Cache-Status', 'BYPASS');
       res.setHeader('CF-Rocket-Loader', 'off');
-      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-DQa1iJSy.js'));
+      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-A0OTgVYs.js'));
     }
     
     // Admin CSS (NOVO NOME)
@@ -194,15 +194,15 @@ app.use('/assets', (req, res, next) => {
       return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-B03NhcvP.css'));
     }
     
-    // Admin JS (NOVO NOME)
-    if (req.path.includes('index-r_bhB-z9.js')) {
+    // Admin JS (NOVO NOME FINAL)
+    if (req.path.includes('index-dIuiN0-d.js')) {
       logger.assets.info('Servindo JS do admin - forçando MIME type');
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('CF-Cache-Status', 'BYPASS');
       res.setHeader('CF-Rocket-Loader', 'off');
-      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-r_bhB-z9.js'));
+      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-dIuiN0-d.js'));
     }
     
     // MANTER COMPATIBILIDADE COM NOMES ANTIGOS (para cache)
