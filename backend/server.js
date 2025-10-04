@@ -95,6 +95,9 @@ const corsOptions = {
       process.env.FRONTEND_URL,
       process.env.ADMIN_URL,
       process.env.BACKEND_URL,
+      // SquareCloud domains (both possible variations)
+      'https://pastel-delivery.squarecloud.app',
+      'https://pastel-delivery.squareweb.app',
       // Development URLs (only included in development mode)
       ...(process.env.NODE_ENV === 'development' ? [
         'http://localhost:5173', // Development frontend
