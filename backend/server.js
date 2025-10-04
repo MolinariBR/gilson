@@ -10,6 +10,7 @@ import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
 import zoneRouter from "./routes/zoneRoute.js";
 import categoryRouter from "./routes/categoryRoute.js";
+import { logger, errorHandler } from "./utils/logger.js";
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -19,13 +20,13 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '.env') }); // backend/.env
 dotenv.config({ path: path.join(__dirname, '..', '.env') }); // root .env
 
-// Debug: Log loaded environment variables (remove in production)
-console.log('🔍 Environment variables loaded:');
-console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅ Set' : '❌ Missing');
-console.log('MONGO_URL:', process.env.MONGO_URL ? '✅ Set' : '❌ Missing');
-console.log('MERCADOPAGO_ACCESS_TOKEN:', process.env.MERCADOPAGO_ACCESS_TOKEN ? '✅ Set' : '❌ Missing');
-console.log('FRONTEND_URL:', process.env.FRONTEND_URL ? '✅ Set' : '❌ Missing');
-console.log('BACKEND_URL:', process.env.BACKEND_URL ? '✅ Set' : '❌ Missing');
+// Log loaded environment variables
+logger.system.info('Carregando variáveis de ambiente...');
+logger.system.info(`JWT_SECRET: ${process.env.JWT_SECRET ? '✅ Configurado' : '❌ Ausente'}`);
+logger.system.info(`MONGO_URL: ${process.env.MONGO_URL ? '✅ Configurado' : '❌ Ausente'}`);
+logger.system.info(`MERCADOPAGO_ACCESS_TOKEN: ${process.env.MERCADOPAGO_ACCESS_TOKEN ? '✅ Configurado' : '❌ Ausente'}`);
+logger.system.info(`FRONTEND_URL: ${process.env.FRONTEND_URL ? '✅ Configurado' : '❌ Ausente'}`);
+logger.system.info(`BACKEND_URL: ${process.env.BACKEND_URL ? '✅ Configurado' : '❌ Ausente'}`);
 
 // Environment variable validation
 const validateEnvironmentVariables = () => {
@@ -40,11 +41,10 @@ const validateEnvironmentVariables = () => {
   const missingVars = requiredVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
-    console.error('❌ Missing required environment variables:');
+    logger.system.error('Variáveis de ambiente obrigatórias ausentes:', new Error(`Missing: ${missingVars.join(', ')}`));
     missingVars.forEach(varName => {
-      console.error(`   - ${varName}`);
+      logger.system.error(`   - ${varName}`);
     });
-    console.error('\nPlease check your .env file and ensure all required variables are set.');
     process.exit(1);
   }
 
@@ -75,7 +75,7 @@ const validateEnvironmentVariables = () => {
     process.exit(1);
   }
 
-  console.log('✅ Environment variables validated successfully');
+  logger.system.info('✅ Variáveis de ambiente validadas com sucesso');
 };
 
 // app config
@@ -134,52 +134,59 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// Middleware para log de requisições
+app.use((req, res, next) => {
+  const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
+  logger.api.request(req.method, req.url, clientIP);
+  next();
+});
+
 // CRITICAL: Handle assets AFTER CORS but BEFORE APIs
 app.use('/assets', (req, res, next) => {
-  console.log(`🚨 ASSETS INTERCEPTOR: ${req.method} ${req.path}`);
-  console.log(`🚨 Full request URL: ${req.url}`);
-  console.log(`🚨 Request headers: ${JSON.stringify(req.headers.accept)}`);
+  logger.assets.info(`Interceptando asset: ${req.method} ${req.path}`);
   
-  // FORCE return CSS content directly
-  if (req.path.includes('index-C6a7aT4-.css')) {
-    console.log('🚨 SERVING FRONTEND CSS');
-    res.setHeader('Content-Type', 'text/css');
-    res.setHeader('Cache-Control', 'no-cache');
-    return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
+  try {
+    // FORCE return CSS content directly
+    if (req.path.includes('index-C6a7aT4-.css')) {
+      logger.assets.info('Servindo CSS do frontend');
+      res.setHeader('Content-Type', 'text/css');
+      res.setHeader('Cache-Control', 'no-cache');
+      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
+    }
+    
+    if (req.path.includes('index-Bl7Y6Pke.js')) {
+      logger.assets.info('Servindo JS do frontend - forçando MIME type');
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('CF-Cache-Status', 'BYPASS');
+      res.setHeader('CF-Rocket-Loader', 'off');
+      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'));
+    }
+    
+    if (req.path.includes('index-CAabumZp.css')) {
+      logger.assets.info('Servindo CSS do admin');
+      res.setHeader('Content-Type', 'text/css');
+      res.setHeader('Cache-Control', 'no-cache');
+      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-CAabumZp.css'));
+    }
+    
+    if (req.path.includes('index-Dnk9WlHB.js')) {
+      logger.assets.info('Servindo JS do admin - forçando MIME type');
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('CF-Cache-Status', 'BYPASS');
+      res.setHeader('CF-Rocket-Loader', 'off');
+      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-Dnk9WlHB.js'));
+    }
+    
+    logger.assets.error(`Asset não encontrado: ${req.path}`);
+    res.status(404).send('Asset not found');
+  } catch (error) {
+    logger.assets.error(`Erro ao servir asset ${req.path}:`, error);
+    res.status(500).send('Erro interno do servidor');
   }
-  
-  if (req.path.includes('index-Bl7Y6Pke.js')) {
-    console.log('🚨 SERVING FRONTEND JS - FORCING MIME TYPE');
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('CF-Cache-Status', 'BYPASS');
-    res.setHeader('CF-Rocket-Loader', 'off');
-    return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'));
-  }
-  
-  if (req.path.includes('index-CAabumZp.css')) {
-    console.log('🚨 SERVING ADMIN CSS');
-    res.setHeader('Content-Type', 'text/css');
-    res.setHeader('Cache-Control', 'no-cache');
-    return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-CAabumZp.css'));
-  }
-  
-  if (req.path.includes('index-Dnk9WlHB.js')) {
-    console.log('🚨 SERVING ADMIN JS - FORCING MIME TYPE');
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('CF-Cache-Status', 'BYPASS');
-    res.setHeader('CF-Rocket-Loader', 'off');
-    return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-Dnk9WlHB.js'));
-  }
-  
-  console.log(`🚨 UNHANDLED ASSET: ${req.path}`);
-  console.log(`🚨 Available files check:`);
-  console.log(`🚨 Frontend CSS exists: ${require('fs').existsSync(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'))}`);
-  console.log(`🚨 Frontend JS exists: ${require('fs').existsSync(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'))}`);
-  res.status(404).send('Asset not found');
 });
 
 // Validate environment variables before starting
@@ -232,6 +239,12 @@ app.get("*", (req, res) => {
   }
 });
 
+// Middleware de tratamento de erros (deve ser o último)
+app.use(errorHandler);
+
 app.listen(port, () => {
-  console.log(`Server Started on port: ${port}`);
+  logger.app.info(`🚀 Servidor iniciado na porta: ${port}`);
+  logger.app.info(`🌐 Frontend: ${process.env.FRONTEND_URL}`);
+  logger.app.info(`👨‍💼 Admin: ${process.env.ADMIN_URL}`);
+  logger.app.info(`📊 Ambiente: ${process.env.NODE_ENV}`);
 });

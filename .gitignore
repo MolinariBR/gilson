@@ -12,7 +12,9 @@ build/
 
 # Logs
 *.log
-logs/
+logs/*.log
+!logs/README.md
+!logs/.gitkeep
 
 # Runtime data
 pids/
