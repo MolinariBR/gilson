@@ -82,45 +82,6 @@ const validateEnvironmentVariables = () => {
 const app = express();
 const port = process.env.PORT || 4000;
 
-// ABSOLUTE PRIORITY: Handle assets BEFORE ANY middleware
-app.use('/assets', (req, res, next) => {
-  console.log(`🚨 CRITICAL ASSETS INTERCEPTOR: ${req.method} ${req.path}`);
-  console.log(`🚨 Full URL: ${req.url}`);
-  
-  const fileName = req.path.substring(1); // Remove leading slash
-  console.log(`🚨 Looking for file: ${fileName}`);
-  
-  // Force MIME type based on file extension
-  if (fileName.endsWith('.css')) {
-    res.setHeader('Content-Type', 'text/css');
-    console.log('🚨 FORCING CSS MIME TYPE');
-  } else if (fileName.endsWith('.js')) {
-    res.setHeader('Content-Type', 'application/javascript');
-    console.log('🚨 FORCING JS MIME TYPE');
-  }
-  
-  // Try to serve from admin assets first
-  const adminAssetPath = path.join(__dirname, '../admin/dist/assets', fileName);
-  console.log(`🚨 Checking admin path: ${adminAssetPath}`);
-  
-  if (require('fs').existsSync(adminAssetPath)) {
-    console.log(`🚨 SERVING FROM ADMIN: ${adminAssetPath}`);
-    return res.sendFile(adminAssetPath);
-  }
-  
-  // Then try frontend assets
-  const frontendAssetPath = path.join(__dirname, '../frontend/dist/assets', fileName);
-  console.log(`🚨 Checking frontend path: ${frontendAssetPath}`);
-  
-  if (require('fs').existsSync(frontendAssetPath)) {
-    console.log(`🚨 SERVING FROM FRONTEND: ${frontendAssetPath}`);
-    return res.sendFile(frontendAssetPath);
-  }
-  
-  console.log(`🚨 ASSET NOT FOUND: ${fileName}`);
-  res.status(404).send('Asset not found');
-});
-
 //middlewares
 app.use(express.json());
 
@@ -173,7 +134,38 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Assets middleware moved to absolute top priority
+// CRITICAL: Handle assets AFTER CORS but BEFORE APIs
+app.use('/assets', (req, res, next) => {
+  console.log(`🚨 ASSETS INTERCEPTOR: ${req.method} ${req.path}`);
+  
+  // FORCE return CSS content directly
+  if (req.path.includes('index-C6a7aT4-.css')) {
+    console.log('🚨 SERVING FRONTEND CSS');
+    res.setHeader('Content-Type', 'text/css');
+    return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
+  }
+  
+  if (req.path.includes('index-Bl7Y6Pke.js')) {
+    console.log('🚨 SERVING FRONTEND JS');
+    res.setHeader('Content-Type', 'application/javascript');
+    return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'));
+  }
+  
+  if (req.path.includes('index-CAabumZp.css')) {
+    console.log('🚨 SERVING ADMIN CSS');
+    res.setHeader('Content-Type', 'text/css');
+    return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-CAabumZp.css'));
+  }
+  
+  if (req.path.includes('index-Dnk9WlHB.js')) {
+    console.log('🚨 SERVING ADMIN JS');
+    res.setHeader('Content-Type', 'application/javascript');
+    return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-Dnk9WlHB.js'));
+  }
+  
+  console.log(`🚨 UNHANDLED ASSET: ${req.path}`);
+  res.status(404).send('Asset not found');
+});
 
 // Validate environment variables before starting
 validateEnvironmentVariables();
@@ -192,31 +184,7 @@ app.use("/api", categoryRouter);
 
 // Assets routes moved to top for priority
 
-// Generic assets route for other files
-app.use('/assets', (req, res, next) => {
-  const filePath = req.path;
-  if (filePath.endsWith('.css')) {
-    res.setHeader('Content-Type', 'text/css');
-  } else if (filePath.endsWith('.js')) {
-    res.setHeader('Content-Type', 'application/javascript');
-  } else if (filePath.endsWith('.png')) {
-    res.setHeader('Content-Type', 'image/png');
-  }
-  
-  // Try frontend assets first
-  const frontendAssetPath = path.join(__dirname, '../frontend/dist/assets', filePath);
-  if (require('fs').existsSync(frontendAssetPath)) {
-    return res.sendFile(frontendAssetPath);
-  }
-  
-  // Then try admin assets
-  const adminAssetPath = path.join(__dirname, '../admin/dist/assets', filePath);
-  if (require('fs').existsSync(adminAssetPath)) {
-    return res.sendFile(adminAssetPath);
-  }
-  
-  res.status(404).send('Asset not found');
-});
+// REMOVED: Duplicate assets route that was overriding the priority one
 
 // Serve admin static files
 app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
