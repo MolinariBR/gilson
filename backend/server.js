@@ -52,7 +52,8 @@ const validateEnvironmentVariables = () => {
     process.exit(1);
   }
 
-  if (process.env.MERCADOPAGO_ACCESS_TOKEN.includes('your_mercadopago_access_token_here')) {
+  // Optional MercadoPago validation - only if token is provided
+  if (process.env.MERCADOPAGO_ACCESS_TOKEN && process.env.MERCADOPAGO_ACCESS_TOKEN.includes('your_mercadopago_access_token_here')) {
     console.error('❌ Please replace MERCADOPAGO_ACCESS_TOKEN with your actual MercadoPago access token');
     process.exit(1);
   }

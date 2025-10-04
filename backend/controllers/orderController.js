@@ -2,9 +2,13 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 
-const client = new MercadoPagoConfig({ 
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN 
-});
+// Initialize MercadoPago client only if token is available
+let client = null;
+if (process.env.MERCADOPAGO_ACCESS_TOKEN) {
+  client = new MercadoPagoConfig({ 
+    accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN 
+  });
+}
 
 // placing user order for frontend
 const placeOrder = async (req, res) => {
@@ -32,6 +36,14 @@ const placeOrder = async (req, res) => {
     });
     await newOrder.save();
     await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
+
+    // Check if MercadoPago is configured
+    if (!client) {
+      return res.json({ 
+        success: false, 
+        message: "Payment system not configured. Please contact support." 
+      });
+    }
 
     // Create MercadoPago preference
     const preference = new Preference(client);
@@ -117,6 +129,12 @@ const mercadoPagoWebhook = async (req, res) => {
       }
       
       try {
+        // Check if MercadoPago is configured
+        if (!client) {
+          console.log('MercadoPago not configured, ignoring webhook');
+          return res.status(200).send("OK");
+        }
+
         // Create Payment instance for API verification
         const payment = new Payment(client);
         

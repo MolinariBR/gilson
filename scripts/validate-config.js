@@ -61,7 +61,7 @@ function validateBackendConfig() {
   valid &= validateUrl(backendEnv.ADMIN_URL, 'ADMIN_URL');
 
   // Required variables
-  const requiredVars = ['JWT_SECRET', 'MONGO_URL', 'MERCADOPAGO_ACCESS_TOKEN'];
+  const requiredVars = ['JWT_SECRET', 'MONGO_URL'];
   requiredVars.forEach(varName => {
     if (!backendEnv[varName]) {
       console.error(`❌ ${varName} is not set`);
@@ -81,8 +81,14 @@ function validateBackendConfig() {
       valid = false;
     }
 
-    if (backendEnv.MERCADOPAGO_ACCESS_TOKEN && !backendEnv.MERCADOPAGO_ACCESS_TOKEN.startsWith('APP_USR-')) {
-      console.warn('⚠️  Consider using production MercadoPago token (APP_USR-*) for production');
+    // Optional MercadoPago validation
+    if (backendEnv.MERCADOPAGO_ACCESS_TOKEN) {
+      if (!backendEnv.MERCADOPAGO_ACCESS_TOKEN.startsWith('APP_USR-')) {
+        console.warn('⚠️  Consider using production MercadoPago token (APP_USR-*) for production');
+      }
+      console.log('✅ MercadoPago configured');
+    } else {
+      console.warn('⚠️  MercadoPago not configured - payment functionality will be disabled');
     }
   }
 

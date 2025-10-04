@@ -33,10 +33,7 @@ const validateConfig = () => {
       validator: (value) => value && (value.startsWith('mongodb://') || value.startsWith('mongodb+srv://')),
       error: 'MONGO_URL must be a valid MongoDB connection string'
     },
-    'MERCADOPAGO_ACCESS_TOKEN': {
-      validator: (value) => value && !value.includes('your_mercadopago_access_token_here'),
-      error: 'MERCADOPAGO_ACCESS_TOKEN must be set to your actual MercadoPago access token'
-    },
+
     'FRONTEND_URL': {
       validator: (value) => value && (value.startsWith('http://') || value.startsWith('https://')),
       error: 'FRONTEND_URL must be a valid HTTP/HTTPS URL'
@@ -63,7 +60,7 @@ const validateConfig = () => {
   }
 
   // Check optional variables
-  const optionalVars = ['ADMIN_URL', 'PORT', 'NODE_ENV'];
+  const optionalVars = ['ADMIN_URL', 'PORT', 'NODE_ENV', 'MERCADOPAGO_ACCESS_TOKEN'];
   optionalVars.forEach(varName => {
     const value = process.env[varName];
     if (value) {
@@ -87,8 +84,15 @@ const validateConfig = () => {
     }
     
     // Check for production MercadoPago token
-    if (process.env.MERCADOPAGO_ACCESS_TOKEN && process.env.MERCADOPAGO_ACCESS_TOKEN.startsWith('TEST-')) {
-      warnings.push('Using TEST MercadoPago token in production environment');
+    if (process.env.MERCADOPAGO_ACCESS_TOKEN) {
+      if (process.env.MERCADOPAGO_ACCESS_TOKEN.startsWith('TEST-')) {
+        warnings.push('Using TEST MercadoPago token in production environment');
+      }
+      if (process.env.MERCADOPAGO_ACCESS_TOKEN.includes('your_mercadopago_access_token_here')) {
+        warnings.push('MercadoPago token contains placeholder value');
+      }
+    } else {
+      warnings.push('MercadoPago not configured - payment functionality will be disabled');
     }
     
     // Check for localhost URLs

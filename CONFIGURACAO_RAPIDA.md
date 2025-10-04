@@ -20,7 +20,7 @@
 ```env
 JWT_SECRET=GERE_UMA_CHAVE_ALEATORIA_DE_32_CARACTERES_AQUI
 MONGO_URL=mongodb+srv://SEU_USUARIO:SUA_SENHA@cluster0.xxxxx.mongodb.net/pastel-delivery
-MERCADOPAGO_ACCESS_TOKEN=APP_USR-seu_token_aqui_se_usar_pagamentos
+# MERCADOPAGO_ACCESS_TOKEN=APP_USR-seu_token_aqui_se_usar_pagamentos  # OPCIONAL
 FRONTEND_URL=https://pastel-delivery.squarecloud.app
 BACKEND_URL=https://pastel-delivery.squarecloud.app
 ADMIN_URL=https://pastel-delivery.squarecloud.app/admin
@@ -44,11 +44,16 @@ mongodb+srv://meuusuario:minhasenha@cluster0.abc123.mongodb.net/pastel-delivery?
 - API: https://pastel-delivery.squarecloud.app/api
 
 ## 🆘 **Se ainda der erro:**
-1. Verifique se todas as variáveis foram salvas
+1. Verifique se todas as variáveis obrigatórias foram salvas (JWT_SECRET, MONGO_URL)
 2. Verifique se a string do MongoDB está correta
 3. Reinicie a aplicação novamente
 4. Verifique os logs no painel SquareCloud
 5. Teste a conexão MongoDB separadamente
+
+## 💳 **Sobre Pagamentos (MercadoPago):**
+- **OPCIONAL**: O sistema funciona sem MercadoPago configurado
+- **Se não configurado**: Usuários verão mensagem "Sistema de pagamento não configurado"
+- **Para ativar**: Adicione a variável MERCADOPAGO_ACCESS_TOKEN no painel
 
 ## 🔒 **Segurança Pós-Deploy:**
 1. **Restrinja IPs no MongoDB:** Remova 0.0.0.0/0 e adicione apenas IPs do SquareCloud
