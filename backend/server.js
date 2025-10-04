@@ -134,29 +134,39 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// PRIORITY: Handle assets FIRST before any other routes
-app.get('/assets/index-CAabumZp.css', (req, res) => {
-  console.log('🎯 Serving admin CSS with correct MIME type');
-  res.setHeader('Content-Type', 'text/css');
-  res.sendFile(path.join(__dirname, '../admin/dist/assets/index-CAabumZp.css'));
-});
-
-app.get('/assets/index-Dnk9WlHB.js', (req, res) => {
-  console.log('🎯 Serving admin JS with correct MIME type');
-  res.setHeader('Content-Type', 'application/javascript');
-  res.sendFile(path.join(__dirname, '../admin/dist/assets/index-Dnk9WlHB.js'));
-});
-
-app.get('/assets/index-C6a7aT4-.css', (req, res) => {
-  console.log('🎯 Serving frontend CSS with correct MIME type');
-  res.setHeader('Content-Type', 'text/css');
-  res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
-});
-
-app.get('/assets/index-Bl7Y6Pke.js', (req, res) => {
-  console.log('🎯 Serving frontend JS with correct MIME type');
-  res.setHeader('Content-Type', 'application/javascript');
-  res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'));
+// CRITICAL: Intercept ALL /assets requests BEFORE any other middleware
+app.use('/assets', (req, res, next) => {
+  console.log(`🔍 Assets request intercepted: ${req.path}`);
+  
+  const fileName = req.path.substring(1); // Remove leading slash
+  
+  // Set MIME type based on file extension
+  if (fileName.endsWith('.css')) {
+    res.setHeader('Content-Type', 'text/css');
+    console.log('🎯 Setting CSS MIME type');
+  } else if (fileName.endsWith('.js')) {
+    res.setHeader('Content-Type', 'application/javascript');
+    console.log('🎯 Setting JS MIME type');
+  } else if (fileName.endsWith('.png')) {
+    res.setHeader('Content-Type', 'image/png');
+  }
+  
+  // Try to serve from admin assets first
+  const adminAssetPath = path.join(__dirname, '../admin/dist/assets', fileName);
+  if (require('fs').existsSync(adminAssetPath)) {
+    console.log(`✅ Serving from admin: ${adminAssetPath}`);
+    return res.sendFile(adminAssetPath);
+  }
+  
+  // Then try frontend assets
+  const frontendAssetPath = path.join(__dirname, '../frontend/dist/assets', fileName);
+  if (require('fs').existsSync(frontendAssetPath)) {
+    console.log(`✅ Serving from frontend: ${frontendAssetPath}`);
+    return res.sendFile(frontendAssetPath);
+  }
+  
+  console.log(`❌ Asset not found: ${fileName}`);
+  res.status(404).send('Asset not found');
 });
 
 // Validate environment variables before starting
