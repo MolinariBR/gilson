@@ -134,10 +134,19 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Middleware para log de requisições
+// Middleware global para desabilitar Cloudflare em TODAS as respostas
 app.use((req, res, next) => {
   const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
   logger.api.request(req.method, req.url, clientIP);
+  
+  // Headers anti-Cloudflare para TODAS as respostas
+  res.setHeader('CF-Cache-Status', 'BYPASS');
+  res.setHeader('CF-Rocket-Loader', 'off');
+  res.setHeader('CF-Mirage', 'off');
+  res.setHeader('CF-Polish', 'off');
+  res.setHeader('CF-ScrapeShield', 'off');
+  res.setHeader('Server', 'Express-Custom');
+  
   next();
 });
 
@@ -189,6 +198,20 @@ app.use('/assets', (req, res, next) => {
   }
 });
 
+// Rota de teste para verificar headers anti-Cloudflare
+app.get('/test-headers', (req, res) => {
+  logger.backend.info('Rota de teste de headers acessada');
+  res.json({
+    message: 'Headers anti-Cloudflare aplicados',
+    headers: {
+      'CF-Cache-Status': res.getHeader('CF-Cache-Status'),
+      'CF-Rocket-Loader': res.getHeader('CF-Rocket-Loader'),
+      'Server': res.getHeader('Server')
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Validate environment variables before starting
 validateEnvironmentVariables();
 
@@ -214,27 +237,43 @@ app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
 // Serve frontend static files  
 app.use("/", express.static(path.join(__dirname, "../frontend/dist")));
 
+// Middleware para desabilitar Cloudflare em TODAS as respostas HTML
+const disableCloudflareOptimizations = (res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('CF-Cache-Status', 'BYPASS');
+  res.setHeader('CF-Rocket-Loader', 'off');
+  res.setHeader('CF-Mirage', 'off');
+  res.setHeader('CF-Polish', 'off');
+  res.setHeader('CF-ScrapeShield', 'off');
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow, nosnippet, noarchive');
+};
+
 // Handle SPA routing ONLY for HTML pages (not assets)
 app.get("*", (req, res) => {
+  logger.api.request(req.method, req.path, req.ip);
+  
   // If it's an assets request that wasn't handled above, return 404
   if (req.path.startsWith('/assets/') || req.path.startsWith('/admin/assets/')) {
+    logger.assets.error(`Asset não encontrado: ${req.path}`);
     return res.status(404).send('Asset not found');
   }
   
   // If it's an admin route, serve admin index.html
   if (req.path.startsWith('/admin')) {
-    // Disable Cloudflare optimizations that interfere with MIME types
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('CF-Cache-Status', 'BYPASS');
+    logger.backend.info(`Servindo admin HTML para: ${req.path}`);
+    disableCloudflareOptimizations(res);
     res.sendFile(path.join(__dirname, '../admin/dist/index.html'));
   } else if (req.path.startsWith('/api')) {
     // API routes that don't exist
+    logger.api.error(`Rota API não encontrada: ${req.path}`);
     res.status(404).json({ success: false, message: "API endpoint not found" });
   } else {
     // Serve frontend index.html for all other routes
-    // Disable Cloudflare optimizations that interfere with MIME types
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('CF-Cache-Status', 'BYPASS');
+    logger.backend.info(`Servindo frontend HTML para: ${req.path}`);
+    disableCloudflareOptimizations(res);
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   }
 });
