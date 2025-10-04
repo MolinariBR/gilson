@@ -137,33 +137,44 @@ app.use(cors(corsOptions));
 // CRITICAL: Handle assets AFTER CORS but BEFORE APIs
 app.use('/assets', (req, res, next) => {
   console.log(`🚨 ASSETS INTERCEPTOR: ${req.method} ${req.path}`);
+  console.log(`🚨 Full request URL: ${req.url}`);
+  console.log(`🚨 Request headers: ${JSON.stringify(req.headers.accept)}`);
   
   // FORCE return CSS content directly
   if (req.path.includes('index-C6a7aT4-.css')) {
     console.log('🚨 SERVING FRONTEND CSS');
     res.setHeader('Content-Type', 'text/css');
+    res.setHeader('Cache-Control', 'no-cache');
     return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
   }
   
   if (req.path.includes('index-Bl7Y6Pke.js')) {
-    console.log('🚨 SERVING FRONTEND JS');
+    console.log('🚨 SERVING FRONTEND JS - FORCING MIME TYPE');
     res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'));
   }
   
   if (req.path.includes('index-CAabumZp.css')) {
     console.log('🚨 SERVING ADMIN CSS');
     res.setHeader('Content-Type', 'text/css');
+    res.setHeader('Cache-Control', 'no-cache');
     return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-CAabumZp.css'));
   }
   
   if (req.path.includes('index-Dnk9WlHB.js')) {
-    console.log('🚨 SERVING ADMIN JS');
+    console.log('🚨 SERVING ADMIN JS - FORCING MIME TYPE');
     res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-Dnk9WlHB.js'));
   }
   
   console.log(`🚨 UNHANDLED ASSET: ${req.path}`);
+  console.log(`🚨 Available files check:`);
+  console.log(`🚨 Frontend CSS exists: ${require('fs').existsSync(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'))}`);
+  console.log(`🚨 Frontend JS exists: ${require('fs').existsSync(path.join(__dirname, '../frontend/dist/assets/index-Bl7Y6Pke.js'))}`);
   res.status(404).send('Asset not found');
 });
 
