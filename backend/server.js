@@ -149,12 +149,35 @@ app.use("/api/order", orderRouter);
 app.use("/api/zone", zoneRouter);
 app.use("/api", categoryRouter);
 
-// Serve static files for frontend and admin
-app.use("/admin", express.static("../admin/dist"));
-app.use("/", express.static("../frontend/dist"));
+// Serve static files for frontend and admin with proper MIME types
+app.use("/admin", express.static(path.join(__dirname, "../admin/dist"), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    }
+  }
+}));
 
-// Handle SPA routing for frontend
+app.use("/", express.static(path.join(__dirname, "../frontend/dist"), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    }
+  }
+}));
+
+// Handle SPA routing for frontend (only for non-static files)
 app.get("/*", (req, res) => {
+  // Skip static files (they should be handled by express.static above)
+  if (req.path.includes('.css') || req.path.includes('.js') || req.path.includes('.png') || 
+      req.path.includes('.jpg') || req.path.includes('.ico') || req.path.includes('.svg')) {
+    return res.status(404).send('File not found');
+  }
+  
   // If it's an admin route, serve admin index.html
   if (req.path.startsWith('/admin')) {
     res.sendFile(path.join(__dirname, '../admin/dist/index.html'));
