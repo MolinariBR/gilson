@@ -2,10 +2,14 @@ import mongoose from "mongoose";
 
 export const connectDB = async () => {
   try {
-    console.log("🔗 Attempting to connect to MongoDB...");
-    console.log("🔍 MONGO_URL:", process.env.MONGO_URL ? process.env.MONGO_URL.substring(0, 50) + "..." : "NOT SET");
+    // Force the correct MongoDB Atlas URL
+    const mongoUrl = process.env.MONGO_URL || "mongodb+srv://zews21_db_user:AgaFhZK9pzoRxkGC@cluster0.0imkrwc.mongodb.net/pastel-delivery?retryWrites=true&w=majority&appName=Cluster0";
     
-    await mongoose.connect(process.env.MONGO_URL);
+    console.log("🔗 Attempting to connect to MongoDB...");
+    console.log("🔍 Using MONGO_URL:", mongoUrl.substring(0, 50) + "...");
+    console.log("🔍 Environment MONGO_URL:", process.env.MONGO_URL ? process.env.MONGO_URL.substring(0, 50) + "..." : "NOT SET");
+    
+    await mongoose.connect(mongoUrl);
     console.log("✅ MongoDB connected successfully");
   } catch (error) {
     console.error("❌ MongoDB connection failed:", error.message);
