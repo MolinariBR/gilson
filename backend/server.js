@@ -173,68 +173,51 @@ app.use((req, res, next) => {
   next();
 });
 
-// CRITICAL: Handle assets AFTER CORS but BEFORE APIs
-app.use('/assets', (req, res, next) => {
-  logger.assets.info(`Interceptando asset: ${req.method} ${req.path}`);
-  
-  try {
-    const assetPath = req.path.startsWith('/') ? req.path.slice(1) : req.path;
+// CRITICAL: Servir assets estáticos com Express.static
+app.use('/assets', express.static(path.join(__dirname, '../frontend/dist/assets'), {
+  setHeaders: (res, filePath) => {
+    logger.assets.info(`Servindo asset estático: ${path.basename(filePath)}`);
     
-    // Tentar servir do frontend primeiro
-    const frontendAssetPath = path.join(__dirname, '../frontend/dist/assets', assetPath);
-    
-    if (fs.existsSync(frontendAssetPath)) {
-      logger.assets.info(`Servindo asset do frontend: ${assetPath}`);
-      
-      // Definir MIME type correto
-      if (assetPath.endsWith('.css')) {
-        res.setHeader('Content-Type', 'text/css; charset=utf-8');
-      } else if (assetPath.endsWith('.js')) {
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      } else if (assetPath.endsWith('.png')) {
-        res.setHeader('Content-Type', 'image/png');
-      } else if (assetPath.endsWith('.jpg') || assetPath.endsWith('.jpeg')) {
-        res.setHeader('Content-Type', 'image/jpeg');
-      }
-      
-      // Headers anti-cache e anti-Cloudflare
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('CF-Cache-Status', 'BYPASS');
-      res.setHeader('CF-Rocket-Loader', 'off');
-      
-      return res.sendFile(frontendAssetPath);
+    // Definir MIME types corretos
+    if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    } else if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    } else if (filePath.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
     }
     
-    // Tentar servir do admin se não encontrou no frontend
-    const adminAssetPath = path.join(__dirname, '../admin/dist/assets', assetPath);
-    
-    if (fs.existsSync(adminAssetPath)) {
-      logger.assets.info(`Servindo asset do admin: ${assetPath}`);
-      
-      // Definir MIME type correto
-      if (assetPath.endsWith('.css')) {
-        res.setHeader('Content-Type', 'text/css; charset=utf-8');
-      } else if (assetPath.endsWith('.js')) {
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      }
-      
-      // Headers anti-cache e anti-Cloudflare
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('CF-Cache-Status', 'BYPASS');
-      res.setHeader('CF-Rocket-Loader', 'off');
-      
-      return res.sendFile(adminAssetPath);
-    }
-    
-    logger.assets.error(`Asset não encontrado: ${req.path}`);
-    res.status(404).send('Asset not found');
-  } catch (error) {
-    logger.assets.error(`Erro ao servir asset ${req.path}:`, error);
-    res.status(500).send('Erro interno do servidor');
+    // Headers anti-cache e anti-Cloudflare
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
+    res.setHeader('CF-Rocket-Loader', 'off');
+    res.setHeader('CF-Mirage', 'off');
+    res.setHeader('CF-Polish', 'off');
   }
-});
+}));
+
+// Fallback para assets do admin
+app.use('/assets', express.static(path.join(__dirname, '../admin/dist/assets'), {
+  setHeaders: (res, filePath) => {
+    logger.assets.info(`Servindo asset do admin: ${path.basename(filePath)}`);
+    
+    if (filePath.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    } else if (filePath.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    }
+    
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
+    res.setHeader('CF-Rocket-Loader', 'off');
+  }
+}));
 
 // Rota de teste para verificar headers anti-Cloudflare
 app.get('/test-headers', (req, res) => {
