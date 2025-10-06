@@ -58,7 +58,7 @@ const addFood = async (req, res) => {
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
-      image: image_filename,
+      image: `/uploads/${image_filename}`,
     };
 
     // Set category fields based on what we found
@@ -203,7 +203,7 @@ const updateFood = async (req, res) => {
       if (food && food.image) {
         fs.unlink(`uploads/${food.image}`, () => {});
       }
-      updateData.image = req.file.filename;
+      updateData.image = `/uploads/${req.file.filename}`;
     }
 
     await foodModel.findByIdAndUpdate(req.body.id, updateData);
