@@ -249,9 +249,48 @@ connectDB();
 // api endpoints
 app.use("/api/food", foodRouter);
 // Servir uploads em /uploads para manter compatibilidade com URLs geradas
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+  setHeaders: (res, filePath) => {
+    console.log(`📸 Servindo imagem: ${path.basename(filePath)}`);
+    
+    // Definir MIME types corretos para imagens
+    if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (filePath.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (filePath.endsWith('.gif')) {
+      res.setHeader('Content-Type', 'image/gif');
+    } else if (filePath.endsWith('.webp')) {
+      res.setHeader('Content-Type', 'image/webp');
+    }
+    
+    // Headers para cache e anti-Cloudflare
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache por 1 dia
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('X-Image-Served', 'true');
+  }
+}));
+
 // Manter /images para compatibilidade com código antigo
-app.use("/images", express.static(path.join(__dirname, "uploads")));
+app.use("/images", express.static(path.join(__dirname, "uploads"), {
+  setHeaders: (res, filePath) => {
+    console.log(`📸 Servindo imagem (legacy): ${path.basename(filePath)}`);
+    
+    if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+    } else if (filePath.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    }
+    
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('CF-Cache-Status', 'BYPASS');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+}));
 app.use("/api/user", userRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Imagens de Categorias</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .category { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .category img { max-width: 200px; height: auto; border: 2px solid #ccc; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🖼️ Debug - Imagens de Categorias</h1>
+    
+    <button onclick="testCategories()">🔄 Testar Categorias</button>
+    <button onclick="testDirectImages()">🖼️ Testar Imagens Diretas</button>
+    <button onclick="clearResults()">🗑️ Limpar</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'https://pastel-delivery.squareweb.app/api/categories';
+        const BASE_URL = 'https://pastel-delivery.squareweb.app';
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testCategories() {
+            log('🔄 Buscando categorias da API...', 'info');
+            
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    log(`✅ ${data.data.length} categorias encontradas`, 'success');
+                    
+                    for (const category of data.data) {
+                        await testCategoryImage(category);
+                    }
+                } else {
+                    log('❌ Falha ao buscar categorias', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCategoryImage(category) {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'category';
+            
+            // Informações da categoria
+            categoryDiv.innerHTML = `
+                <h3>${category.name} (${category.slug})</h3>
+                <p><strong>Caminho da imagem:</strong> <code>${category.image}</code></p>
+            `;
+            
+            // Construir URL completa
+            const fullImageUrl = category.image.startsWith('http') 
+                ? category.image 
+                : `${BASE_URL}${category.image}`;
+            
+            categoryDiv.innerHTML += `<p><strong>URL completa:</strong> <code>${fullImageUrl}</code></p>`;
+            
+            // Testar se a imagem carrega
+            try {
+                const imageResponse = await fetch(fullImageUrl, { method: 'HEAD' });
+                
+                if (imageResponse.ok) {
+                    const contentType = imageResponse.headers.get('content-type');
+                    categoryDiv.innerHTML += `<p class="success">✅ Imagem acessível (${contentType})</p>`;
+                    
+                    // Mostrar a imagem
+                    const img = document.createElement('img');
+                    img.src = fullImageUrl;
+                    img.alt = category.name;
+                    img.onload = () => {
+                        categoryDiv.innerHTML += `<p class="success">✅ Imagem carregada com sucesso</p>`;
+                    };
+                    img.onerror = () => {
+                        categoryDiv.innerHTML += `<p class="error">❌ Erro ao carregar imagem no navegador</p>`;
+                    };
+                    categoryDiv.appendChild(img);
+                } else {
+                    categoryDiv.innerHTML += `<p class="error">❌ Imagem não acessível (${imageResponse.status})</p>`;
+                }
+            } catch (error) {
+                categoryDiv.innerHTML += `<p class="error">❌ Erro ao testar imagem: ${error.message}</p>`;
+            }
+            
+            document.getElementById('results').appendChild(categoryDiv);
+        }
+        
+        async function testDirectImages() {
+            log('🖼️ Testando imagens diretas conhecidas...', 'info');
+            
+            const knownImages = [
+                '/uploads/categories/category_1759773442221.jpg',
+                '/uploads/categories/cervejas_1759779585147.jpg',
+                '/uploads/categories/category_1759761721620_opt.jpg'
+            ];
+            
+            for (const imagePath of knownImages) {
+                const fullUrl = `${BASE_URL}${imagePath}`;
+                
+                try {
+                    const response = await fetch(fullUrl, { method: 'HEAD' });
+                    const contentType = response.headers.get('content-type');
+                    
+                    if (response.ok && contentType && contentType.startsWith('image/')) {
+                        log(`✅ ${imagePath} - OK (${contentType})`, 'success');
+                        
+                        // Mostrar a imagem
+                        const img = document.createElement('img');
+                        img.src = fullUrl;
+                        img.style.maxWidth = '200px';
+                        img.style.margin = '10px';
+                        img.style.border = '2px solid green';
+                        document.getElementById('results').appendChild(img);
+                    } else {
+                        log(`❌ ${imagePath} - Falha (${response.status}, ${contentType})`, 'error');
+                    }
+                } catch (error) {
+                    log(`❌ ${imagePath} - Erro: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        // Teste automático ao carregar
+        window.addEventListener('load', () => {
+            testCategories();
+        });
+    </script>
+</body>
+</html>
