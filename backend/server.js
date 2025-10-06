@@ -247,6 +247,9 @@ connectDB();
 
 // api endpoints
 app.use("/api/food", foodRouter);
+// Servir uploads em /uploads para manter compatibilidade com URLs geradas
+app.use("/uploads", express.static("uploads"));
+// Manter /images para compatibilidade com código antigo
 app.use("/images", express.static("uploads"));
 app.use("/api/user", userRouter);
 app.use("/api/cart", cartRouter);
