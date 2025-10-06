@@ -13,6 +13,7 @@ import zoneRouter from "./routes/zoneRoute.js";
 import categoryRouter from "./routes/categoryRoute.js";
 import { logger, errorHandler } from "./utils/logger.js";
 import testRouter from "./routes/testRoute.js";
+import debugRouter from "./routes/debugRoute.js";
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -256,6 +257,7 @@ app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/zone", zoneRouter);
 app.use("/api", categoryRouter);
+app.use("/api/debug", debugRouter);
 
 // Rotas de teste para debug
 app.use("/test", testRouter);
