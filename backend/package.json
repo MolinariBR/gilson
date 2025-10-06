@@ -5,8 +5,9 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon server.js",
-    "server": "nodemon server.js",
+    "dev": "NODE_ENV=development nodemon server.js",
+    "dev:prod": "NODE_ENV=production nodemon server.js", 
+    "server": "NODE_ENV=development nodemon server.js",
     "start": "node server.js",
     "build": "echo 'Backend build complete'",
     "test": "vitest --run",

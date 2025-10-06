@@ -6,7 +6,8 @@ import axios from 'axios';
  */
 class CategoryAPI {
   constructor() {
-    this.baseURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+    // FORÇAR URL LOCAL PARA DESENVOLVIMENTO
+    this.baseURL = "http://localhost:4000";
     this.apiClient = axios.create({
       baseURL: this.baseURL,
       timeout: 10000,

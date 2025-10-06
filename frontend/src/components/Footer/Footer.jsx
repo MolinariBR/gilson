@@ -8,7 +8,7 @@ const Footer = () => {
     <div className="footer" id="footer">
       <div className="footer-content">
         <div className="footer-content-left">
-          <img src={assets.logo} alt="" />
+          <h3>Pastelaria do Gilson</h3>
           <p>
             {TRANSLATIONS.footer.description}
           </p>
@@ -30,8 +30,7 @@ const Footer = () => {
         <div className="footer-content-right">
           <h2>{TRANSLATIONS.footer.getInTouch}</h2>
           <ul>
-            <li>+92-308-4900522</li>
-            <li>contact@tomato.com</li>
+            <li>(99) 99644-6125</li>
           </ul>
         </div>
       </div>

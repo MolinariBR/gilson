@@ -7,7 +7,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const LoginPopup = ({ setShowLogin }) => {
-  const {url, setToken, setUser } = useContext(StoreContext);
+  // IGNORAR CONTEXTO - USAR URL LOCAL DIRETA
+  const { setToken, setUser } = useContext(StoreContext);
   const [data, setData] = useState({
     name: "",
   });
@@ -25,7 +26,13 @@ const LoginPopup = ({ setShowLogin }) => {
       return;
     }
     
-    const response = await axios.post(url + "/api/user/login", data);
+    // FORÇAR URL LOCAL DIRETAMENTE - TESTE DEFINITIVO
+    const localUrl = "http://localhost:4000";
+    console.log("🚀 TESTE DEFINITIVO - URL:", localUrl);
+    console.log("🚀 TESTE DEFINITIVO - Data:", data);
+    alert("TESTE: Tentando conectar em " + localUrl);
+    
+    const response = await axios.post(localUrl + "/api/user/login", data);
     if (response.data.success) {
       setToken(response.data.token);
       setUser(response.data.user);

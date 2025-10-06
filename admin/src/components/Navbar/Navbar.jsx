@@ -19,7 +19,7 @@ const Navbar = () => {
   }
   return (
     <div className="navbar">
-      <img className="logo" src={assets.logo} alt="" />
+      <h2 className="logo">Admin - Pastelaria do Gilson</h2>
       {token && admin ? (
         <p className="login-conditon" onClick={logout}>{getAdminTranslation('authentication.logout', 'Logout')}</p>
       ) : (

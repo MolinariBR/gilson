@@ -1,6 +1,5 @@
 import React from "react";
 import "./ExploreMenu.css";
-import { menu_list } from "../../assets/frontend_assets/assets";
 import { TRANSLATIONS } from "../../constants/translations";
 import { getCategoryEnglish } from "../../constants/categories";
 import { useCategories } from "../../hooks/useCategories";
@@ -47,8 +46,8 @@ const ExploreMenu = ({category, setCategory}) => {
     );
   }
 
-  // Use dynamic categories or fallback to static ones
-  const categoriesToRender = categories.length > 0 ? categories : menu_list;
+  // Use dynamic categories
+  const categoriesToRender = categories;
 
   return (
     <div className="explore-menu" id="explore-menu">
@@ -69,19 +68,18 @@ const ExploreMenu = ({category, setCategory}) => {
             <div 
               onClick={() => setCategory(prev => prev === item.original_name ? "All" : item.original_name)} 
               key={item._id || index} 
-              className="explore-menu-list-item"
+              className={`explore-menu-list-item ${category === item.original_name ? "active" : ""}`}
             >
-              <img 
-                className={category === item.original_name ? "active" : ""} 
-                src={item.menu_image} 
-                alt={item.menu_name}
-                onError={(e) => {
-                  // Fallback to static image if dynamic image fails to load
-                  if (!useFallback && menu_list[index]) {
-                    e.target.src = menu_list[index].menu_image;
-                  }
-                }}
-              />
+              {item.menu_image && (
+                <img 
+                  src={item.menu_image} 
+                  alt={item.menu_name}
+                  onError={(e) => {
+                    // Hide image if it fails to load
+                    e.target.style.display = 'none';
+                  }}
+                />
+              )}
               <p>{item.menu_name}</p>
             </div>
           );

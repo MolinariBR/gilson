@@ -7,7 +7,13 @@ export const StoreContext = createContext(null);
 
 const StoreContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
-  const url = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+  // FORÇAR URL LOCAL PARA DESENVOLVIMENTO
+  const url = "http://localhost:4000";
+  
+  // Debug: Log da URL sendo usada
+  console.log("🔧 Backend URL FORÇADA:", url);
+  console.log("🔧 Environment:", import.meta.env.MODE);
+  console.log("🔧 VITE_BACKEND_URL:", import.meta.env.VITE_BACKEND_URL);
   const [token, setToken] = useState("");
   const [user, setUser] = useState(null);
   const [food_list, setFoodList] = useState([]);
@@ -80,19 +86,25 @@ const StoreContextProvider = (props) => {
   useEffect(() => {
     async function loadData() {
       await fetchFoodList();
-      if (localStorage.getItem("token")) {
-        setToken(localStorage.getItem("token"));
-        await loadCardData(localStorage.getItem("token"));
-      }
-      if (localStorage.getItem("user")) {
-        try {
-          const userData = JSON.parse(localStorage.getItem("user"));
-          console.log('Loading user from localStorage:', userData);
-          setUser(userData);
-        } catch (error) {
-          console.error("Error parsing user data:", error);
-          localStorage.removeItem("user");
+      
+      // Verificar se localStorage está disponível
+      try {
+        if (localStorage.getItem("token")) {
+          setToken(localStorage.getItem("token"));
+          await loadCardData(localStorage.getItem("token"));
         }
+        if (localStorage.getItem("user")) {
+          try {
+            const userData = JSON.parse(localStorage.getItem("user"));
+            console.log('Loading user from localStorage:', userData);
+            setUser(userData);
+          } catch (error) {
+            console.error("Error parsing user data:", error);
+            localStorage.removeItem("user");
+          }
+        }
+      } catch (storageError) {
+        console.warn("localStorage não disponível:", storageError);
       }
     }
     loadData();

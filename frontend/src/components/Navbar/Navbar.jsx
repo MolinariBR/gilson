@@ -21,8 +21,8 @@ const Navbar = ({ setShowLogin }) => {
   }
   return (
     <div className="navbar">
-      <Link to="/">
-        <img src={assets.logo} alt="" className="logo" />
+      <Link to="/" className="navbar-brand">
+        <span className="brand-name">Pastelaria do Gilson</span>
       </Link>
       <ul className="navbar-menu">
         <Link
@@ -39,13 +39,7 @@ const Navbar = ({ setShowLogin }) => {
         >
           {TRANSLATIONS.navigation.menu}
         </a>
-        <a
-          href="#app-download"
-          onClick={() => setMenu("mobile-app")}
-          className={menu === "mobile-app" ? "active" : ""}
-        >
-          {TRANSLATIONS.navigation.mobileApp}
-        </a>
+
         <a
           href="#footer"
           onClick={() => setMenu("contact-us")}

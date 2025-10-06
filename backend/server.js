@@ -18,8 +18,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables from multiple locations
-dotenv.config({ path: path.join(__dirname, '.env') }); // backend/.env
-dotenv.config({ path: path.join(__dirname, '..', '.env') }); // root .env
+if (process.env.NODE_ENV === 'development') {
+  dotenv.config({ path: path.join(__dirname, '.env.local') }); // backend/.env.local (desenvolvimento)
+} else {
+  dotenv.config({ path: path.join(__dirname, '.env') }); // backend/.env (produção)
+}
+dotenv.config({ path: path.join(__dirname, '..', '.env') }); // root .env (fallback)
 
 // Log loaded environment variables
 logger.system.info('Carregando variáveis de ambiente...');
@@ -99,11 +103,12 @@ const corsOptions = {
       // SquareCloud domains (both possible variations)
       'https://pastel-delivery.squarecloud.app',
       'https://pastel-delivery.squareweb.app',
-      // Development URLs (only included in development mode)
+      // Development URLs (SEMPRE INCLUIR PARA TESTE)
+      'http://localhost:5173', // Development frontend
+      'http://localhost:5174', // Development admin
+      'http://localhost:4000',  // Development backend
+      // Additional development URLs (if needed)
       ...(process.env.NODE_ENV === 'development' ? [
-        'http://localhost:5173', // Development frontend
-        'http://localhost:5174', // Development admin
-        'http://localhost:4000'  // Development backend
       ] : [])
     ].filter(Boolean); // Remove undefined values
     
@@ -116,14 +121,21 @@ const corsOptions = {
     
     const allAllowedOrigins = [...allowedOrigins, ...mercadoPagoOrigins];
     
+    // DEBUG: Log CORS info
+    console.log(`🔧 CORS Check - Origin: ${origin}`);
+    console.log(`🔧 CORS Check - NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`🔧 CORS Check - Allowed Origins:`, allAllowedOrigins);
+    
     if (allAllowedOrigins.indexOf(origin) !== -1) {
+      console.log(`✅ CORS ALLOWED for origin: ${origin}`);
       callback(null, true);
     } else {
       // In production, allow same-origin requests (when origin is undefined)
       if (process.env.NODE_ENV === 'production' && !origin) {
+        console.log(`✅ CORS ALLOWED (no origin in production)`);
         callback(null, true);
       } else {
-        console.warn(`CORS blocked request from origin: ${origin}`);
+        console.warn(`❌ CORS BLOCKED request from origin: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     }

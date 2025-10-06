@@ -8,7 +8,6 @@ export const TRANSLATIONS = {
   navigation: {
     home: "início",
     menu: "cardápio", 
-    mobileApp: "app móvel",
     contactUs: "fale conosco",
     signIn: "entrar",
     orders: "pedidos",
@@ -30,14 +29,14 @@ export const TRANSLATIONS = {
   // Header and main content
   header: {
     mainTitle: "Peça sua comida favorita aqui",
-    description: "Escolha entre uma variedade diversificada de pratos deliciosos elaborados com os melhores ingredientes e expertise culinária. Nossa missão é satisfazer seus desejos e elevar sua experiência gastronômica, uma refeição deliciosa por vez.",
+    description: "Escolha entre nossos deliciosos pastéis artesanais, caldos reconfortantes e bebidas refrescantes elaborados com os melhores ingredientes e expertise culinária. Nossa missão é satisfazer seus desejos e elevar sua experiência gastronômica, um pastel saboroso por vez.",
     viewMenu: "Ver Cardápio"
   },
 
   // Menu exploration
   menu: {
     exploreTitle: "Explore nosso cardápio",
-    exploreDescription: "Escolha entre uma variedade diversificada de pratos deliciosos. Nossa missão é satisfazer seus desejos e elevar sua experiência gastronômica, uma refeição deliciosa por vez.",
+    exploreDescription: "Escolha entre nossos pastéis artesanais crocantes, caldos caseiros quentinhos e bebidas geladas refrescantes. Nossa missão é satisfazer seus desejos e elevar sua experiência gastronômica, um pastel saboroso por vez.",
     topDishes: "Principais pratos perto de você"
   },
 
@@ -83,15 +82,11 @@ export const TRANSLATIONS = {
     delivery: "Entrega",
     privacyPolicy: "Política de Privacidade",
     getInTouch: "Entre em Contato",
-    copyright: "Copyright 2024 © Tomato.com - Todos os direitos reservados.",
-    description: "Somos uma plataforma de delivery de comida dedicada a conectar você aos melhores restaurantes da sua região. Nossa missão é proporcionar uma experiência gastronômica excepcional, entregando pratos deliciosos e frescos diretamente na sua porta, com rapidez e qualidade garantidas."
+    copyright: "Copyright 2024 © Pastelaria do Gilson - Todos os direitos reservados.",
+    description: "Somos a Pastelaria do Gilson, especializada em pastéis artesanais únicos. Nossos pastéis são preparados com óleo de coco babaçu e temperos proprietários exclusivos, garantindo um sabor inconfundível. Nossa missão é proporcionar uma experiência gastronômica excepcional, entregando pastéis frescos e saborosos diretamente na sua porta, com rapidez e qualidade garantidas."
   },
 
-  // App download section
-  appDownload: {
-    title: "Para uma Melhor Experiência, Baixe o App Tomato",
-    description: "Baixe nosso aplicativo móvel para uma experiência de pedidos mais rápida e conveniente"
-  },
+
 
   // General buttons and actions
   general: {

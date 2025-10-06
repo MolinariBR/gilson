@@ -4,8 +4,24 @@
     justify-content: space-between;
     align-items: center;
 }
-.navbar .logo{
-    width: 150px;
+.navbar .brand-name{
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #49557e;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none;
+}
+
+.brand-name {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff6347;
+    font-family: 'Outfit', sans-serif;
 }
 
 .navbar-menu{
@@ -90,8 +106,8 @@
     color: tomato;
 }
 @media (max-width:1050px) {
-    .navbar .logo{
-        width: 140px;
+    .navbar .brand-name{
+        font-size: 1.6rem;
     } 
     .navbar-menu{
         gap: 20px;
@@ -108,8 +124,8 @@
     }
 }
 @media (max-width:900px) {
-    .navbar .logo{
-        width: 120px;
+    .navbar .brand-name{
+        font-size: 1.4rem;
     } 
     .navbar-menu{
         gap: 15px;
