@@ -9,8 +9,8 @@ node_modules/
 !.env.example
 !.env.production
 
-# Build outputs
-dist/
+# Build outputs (local development)
+# dist/ - Comentado para permitir deploy no SquareCloud
 build/
 
 # Logs
@@ -52,6 +52,6 @@ uploads/*
 # Square Cloud specific
 .squarecloud/
 
-# Production builds
-frontend/dist/
-admin/dist/
+# Production builds (comentado para SquareCloud)
+# frontend/dist/ - Necessário para SquareCloud
+# admin/dist/ - Necessário para SquareCloud
