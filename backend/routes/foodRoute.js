@@ -10,7 +10,9 @@ const foodRouter = express.Router();
 const storage= multer.diskStorage({
     destination:"uploads",
     filename:(req,file,cb)=>{
-        return cb(null,`${Date.now()}${file.originalname}`)
+        const timestamp = Date.now();
+        const originalName = file.originalname.replace(/\s+/g, '_'); // Replace spaces with underscores
+        return cb(null,`${originalName.split('.')[0]}_${timestamp}.${originalName.split('.').pop()}`)
     }
 })
 

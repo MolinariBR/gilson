@@ -678,10 +678,11 @@ class CategoryService {
         };
       }
 
-      // Generate unique filename
+      // Use original filename with timestamp to avoid conflicts
       const timestamp = Date.now();
+      const originalName = path.parse(imageFile.originalname).name;
       const fileExtension = path.extname(imageFile.originalname);
-      const filename = `category_${timestamp}${fileExtension}`;
+      const filename = `${originalName}_${timestamp}${fileExtension}`;
       
       // Create categories upload directory if it doesn't exist
       const uploadDir = this.getCategoryImagePath();
