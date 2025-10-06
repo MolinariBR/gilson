@@ -24,7 +24,8 @@
     "migrate:food:rollback": "node migrations/migrateFoodCategories.js rollback",
     "migrate:food:validate": "node migrations/migrateFoodCategories.js validate",
     "migrate:full": "node scripts/runFullCategoryMigration.js migrate",
-    "migrate:full:validate": "node scripts/runFullCategoryMigration.js validate"
+    "migrate:full:validate": "node scripts/runFullCategoryMigration.js validate",
+    "fix-images": "node scripts/fixImageUrls.js"
   },
   "author": "",
   "license": "ISC",
