@@ -9,7 +9,17 @@ const FoodItem = ({ id, name, price, description, image }) => {
   return (
     <div className="food-item">
       <div className="food-item-img-container">
-        <img src={image.startsWith('http') ? image : url + image} alt="" className="food-item-image" />
+        <img 
+          src={image.startsWith('http') ? image : url + image} 
+          alt="" 
+          className="food-item-image"
+          onLoad={() => console.log('✅ Imagem carregada:', image.startsWith('http') ? image : url + image)}
+          onError={(e) => {
+            console.log('❌ Erro ao carregar imagem:', image.startsWith('http') ? image : url + image);
+            console.log('URL original:', image);
+            console.log('URL base:', url);
+          }}
+        />
         {!cartItems[id] ? (
           <img
             className="add"

@@ -74,7 +74,10 @@ const ExploreMenu = ({category, setCategory}) => {
                 <img 
                   src={item.menu_image} 
                   alt={item.menu_name}
+                  onLoad={() => console.log('✅ Categoria carregada:', item.menu_image)}
                   onError={(e) => {
+                    console.log('❌ Erro categoria:', item.menu_image);
+                    console.log('Item completo:', item);
                     // Hide image if it fails to load
                     e.target.style.display = 'none';
                   }}
