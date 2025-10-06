@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Conexão API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Conexão com API de Categorias</h1>
+    
+    <div>
+        <button onclick="testAPI()">🔄 Testar API</button>
+        <button onclick="clearResults()">🗑️ Limpar Resultados</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'https://pastel-delivery.squareweb.app/api/categories';
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testAPI() {
+            log('🚀 Iniciando teste da API...', 'info');
+            log(`📡 URL da API: ${API_URL}`, 'info');
+            
+            try {
+                // Teste 1: Fetch básico
+                log('🔄 Teste 1: Fetch básico...', 'info');
+                const startTime = Date.now();
+                
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                
+                const duration = Date.now() - startTime;
+                log(`⏱️ Resposta recebida em ${duration}ms`, 'info');
+                log(`📊 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                
+                // Headers da resposta
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                log(`📋 Headers da resposta: <pre>${JSON.stringify(headers, null, 2)}</pre>`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Dados recebidos: <pre>${JSON.stringify(data, null, 2)}</pre>`, 'success');
+                    
+                    if (data.success && data.data) {
+                        log(`🎉 Sucesso! ${data.data.length} categorias encontradas`, 'success');
+                        data.data.forEach((category, index) => {
+                            log(`   ${index + 1}. ${category.name} (${category.slug}) - Ativo: ${category.isActive}`, 'success');
+                        });
+                    } else {
+                        log('⚠️ Resposta não contém dados válidos', 'error');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Erro na resposta: ${errorText}`, 'error');
+                }
+                
+                // Teste 2: Axios (se disponível)
+                if (typeof axios !== 'undefined') {
+                    log('🔄 Teste 2: Axios...', 'info');
+                    try {
+                        const axiosResponse = await axios.get(API_URL, {
+                            timeout: 30000,
+                            headers: {
+                                'Cache-Control': 'no-cache',
+                                'Pragma': 'no-cache'
+                            }
+                        });
+                        log('✅ Axios: Sucesso!', 'success');
+                        log(`📊 Axios dados: <pre>${JSON.stringify(axiosResponse.data, null, 2)}</pre>`, 'success');
+                    } catch (axiosError) {
+                        log(`❌ Axios erro: ${axiosError.message}`, 'error');
+                        if (axiosError.response) {
+                            log(`📊 Axios status: ${axiosError.response.status}`, 'error');
+                            log(`📊 Axios data: ${JSON.stringify(axiosError.response.data)}`, 'error');
+                        }
+                    }
+                } else {
+                    log('ℹ️ Axios não disponível para teste', 'info');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro geral: ${error.message}`, 'error');
+                log(`🔍 Stack trace: <pre>${error.stack}</pre>`, 'error');
+            }
+        }
+        
+        // Teste automático ao carregar a página
+        window.addEventListener('load', () => {
+            log('🌐 Página carregada, executando teste automático...', 'info');
+            testAPI();
+        });
+    </script>
+    
+    <!-- Carregar Axios para teste adicional -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</body>
+</html>

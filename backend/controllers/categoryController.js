@@ -171,26 +171,49 @@ const uploadCategoryImage = async (req, res) => {
 
 // Get active categories (Public endpoint for frontend)
 const getActiveCategories = async (req, res) => {
+  const startTime = Date.now();
+  
   try {
+    console.log('🔄 getActiveCategories: Iniciando busca de categorias ativas...');
+    console.log('🔍 Request headers:', {
+      'user-agent': req.headers['user-agent'],
+      'origin': req.headers.origin,
+      'referer': req.headers.referer
+    });
+    
     const result = await categoryService.getAllCategories(false); // Only active categories
     
+    const duration = Date.now() - startTime;
+    console.log(`⏱️ getActiveCategories: Busca completada em ${duration}ms`);
+    
     if (result.success) {
+      console.log(`✅ getActiveCategories: ${result.data.length} categorias encontradas`);
+      console.log('📊 Categorias:', result.data.map(cat => ({ name: cat.name, slug: cat.slug, active: cat.isActive })));
+      
       // Add caching headers for better performance
       res.set({
         'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
         'ETag': `"categories-${Date.now()}"`,
-        'Last-Modified': new Date().toUTCString()
+        'Last-Modified': new Date().toUTCString(),
+        'X-Response-Time': `${duration}ms`,
+        'X-Categories-Count': result.data.length.toString()
       });
+      
       res.json(result);
     } else {
+      console.error('❌ getActiveCategories: Falha no serviço:', result);
       res.status(500).json(result);
     }
   } catch (error) {
-    console.error("Error in getActiveCategories:", error);
+    const duration = Date.now() - startTime;
+    console.error(`❌ getActiveCategories: Erro após ${duration}ms:`, error);
+    console.error('Stack trace:', error.stack);
+    
     res.status(500).json({ 
       success: false, 
       message: "Erro interno do servidor",
-      error: error.message 
+      error: error.message,
+      duration: `${duration}ms`
     });
   }
 };

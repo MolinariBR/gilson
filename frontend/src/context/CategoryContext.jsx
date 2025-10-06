@@ -24,7 +24,11 @@ export const CategoryContextProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
+      console.log('🔄 CategoryContext: Iniciando busca de categorias...');
+      
       const data = await categoryAPI.getActiveCategories();
+      
+      console.log('✅ CategoryContext: Dados recebidos:', data);
       
       // Transform API data to match expected format
       const transformedCategories = data.map(category => ({
@@ -40,18 +44,55 @@ export const CategoryContextProvider = ({ children }) => {
       // Sort by order
       transformedCategories.sort((a, b) => (a.order || 0) - (b.order || 0));
       
+      console.log('✅ CategoryContext: Categorias transformadas:', transformedCategories);
+      
       setCategories(transformedCategories);
       setUseFallback(false);
+      
+      // Show success message if recovering from error
+      if (error) {
+        toast.success('Categorias carregadas com sucesso!');
+      }
     } catch (err) {
-      console.error('Failed to fetch categories:', err);
+      console.error('❌ CategoryContext: Falha ao buscar categorias:', err);
       setError(err.message);
       
-      // Não usar categorias padrão - deixar vazio para que o admin crie
-      setCategories([]);
+      // Usar categorias básicas como fallback para não quebrar a aplicação
+      const fallbackCategories = [
+        {
+          _id: 'fallback-1',
+          menu_name: 'Pastéis',
+          original_name: 'Pastéis',
+          menu_image: '',
+          slug: 'pasteis',
+          isActive: true,
+          order: 1
+        },
+        {
+          _id: 'fallback-2',
+          menu_name: 'Bebidas',
+          original_name: 'Bebidas',
+          menu_image: '',
+          slug: 'bebidas',
+          isActive: true,
+          order: 2
+        }
+      ];
+      
+      setCategories(fallbackCategories);
       setUseFallback(true);
       
-      // Show error toast but don't block functionality
-      toast.error(TRANSLATIONS.messages.errorFetchingCategories || 'Erro ao carregar categorias');
+      // Show error toast with retry option
+      toast.error(
+        `${TRANSLATIONS.messages.errorFetchingCategories || 'Erro ao carregar categorias'} - Usando categorias básicas`,
+        {
+          autoClose: 5000,
+          onClick: () => {
+            console.log('🔄 Tentando novamente via toast click...');
+            fetchCategories();
+          }
+        }
+      );
     } finally {
       setLoading(false);
     }
