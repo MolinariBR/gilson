@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { connectDB } from "./config/db.js";
@@ -177,72 +178,54 @@ app.use('/assets', (req, res, next) => {
   logger.assets.info(`Interceptando asset: ${req.method} ${req.path}`);
   
   try {
-    // NOVOS NOMES DOS ARQUIVOS APÓS REBUILD
+    const assetPath = req.path.startsWith('/') ? req.path.slice(1) : req.path;
     
-    // Frontend CSS (NOVO NOME APÓS REBUILD)
-    if (req.path.includes('index-CnlQtNPM.css')) {
-      logger.assets.info('Servindo CSS do frontend');
-      res.setHeader('Content-Type', 'text/css');
-      res.setHeader('Cache-Control', 'no-cache');
-      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-CnlQtNPM.css'));
-    }
+    // Tentar servir do frontend primeiro
+    const frontendAssetPath = path.join(__dirname, '../frontend/dist/assets', assetPath);
     
-    // Frontend JS (NOVO NOME APÓS REBUILD)
-    if (req.path.includes('index-BdtqqC9W.js')) {
-      logger.assets.info('Servindo JS do frontend - forçando MIME type');
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    if (fs.existsSync(frontendAssetPath)) {
+      logger.assets.info(`Servindo asset do frontend: ${assetPath}`);
+      
+      // Definir MIME type correto
+      if (assetPath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      } else if (assetPath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      } else if (assetPath.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (assetPath.endsWith('.jpg') || assetPath.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      }
+      
+      // Headers anti-cache e anti-Cloudflare
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('CF-Cache-Status', 'BYPASS');
       res.setHeader('CF-Rocket-Loader', 'off');
-      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-BdtqqC9W.js'));
+      
+      return res.sendFile(frontendAssetPath);
     }
     
-    // Admin CSS (NOVO NOME)
-    if (req.path.includes('index-B03NhcvP.css')) {
-      logger.assets.info('Servindo CSS do admin');
-      res.setHeader('Content-Type', 'text/css');
-      res.setHeader('Cache-Control', 'no-cache');
-      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-B03NhcvP.css'));
-    }
+    // Tentar servir do admin se não encontrou no frontend
+    const adminAssetPath = path.join(__dirname, '../admin/dist/assets', assetPath);
     
-    // Admin JS (NOVO NOME FINAL)
-    if (req.path.includes('index-dIuiN0-d.js')) {
-      logger.assets.info('Servindo JS do admin - forçando MIME type');
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    if (fs.existsSync(adminAssetPath)) {
+      logger.assets.info(`Servindo asset do admin: ${assetPath}`);
+      
+      // Definir MIME type correto
+      if (assetPath.endsWith('.css')) {
+        res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      } else if (assetPath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      }
+      
+      // Headers anti-cache e anti-Cloudflare
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('CF-Cache-Status', 'BYPASS');
       res.setHeader('CF-Rocket-Loader', 'off');
-      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-dIuiN0-d.js'));
-    }
-    
-    // MANTER COMPATIBILIDADE COM NOMES ANTIGOS (para cache)
-    if (req.path.includes('index-Bl7Y6Pke.js')) {
-      logger.assets.info('Redirecionando JS antigo do frontend para novo');
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('CF-Cache-Status', 'BYPASS');
-      res.setHeader('CF-Rocket-Loader', 'off');
-      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-DQa1iJSy.js'));
-    }
-    
-    if (req.path.includes('index-Dnk9WlHB.js')) {
-      logger.assets.info('Redirecionando JS antigo do admin para novo');
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('CF-Cache-Status', 'BYPASS');
-      res.setHeader('CF-Rocket-Loader', 'off');
-      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-r_bhB-z9.js'));
-    }
-    
-    if (req.path.includes('index-CAabumZp.css')) {
-      logger.assets.info('Redirecionando CSS antigo do admin para novo');
-      res.setHeader('Content-Type', 'text/css');
-      res.setHeader('Cache-Control', 'no-cache');
-      return res.sendFile(path.join(__dirname, '../admin/dist/assets/index-B03NhcvP.css'));
+      
+      return res.sendFile(adminAssetPath);
     }
     
     logger.assets.error(`Asset não encontrado: ${req.path}`);
