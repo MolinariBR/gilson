@@ -4,6 +4,53 @@ import categoryModel from "../models/categoryModel.js";
 
 const debugRouter = express.Router();
 
+// Debug route to list actual files in uploads directory
+debugRouter.get("/files", async (req, res) => {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    const uploadsDir = 'uploads';
+    const categoriesDir = 'uploads/categories';
+    
+    let uploadsFiles = [];
+    let categoriesFiles = [];
+    
+    // List files in uploads/
+    if (fs.existsSync(uploadsDir)) {
+      uploadsFiles = fs.readdirSync(uploadsDir).filter(file => 
+        fs.statSync(`${uploadsDir}/${file}`).isFile()
+      );
+    }
+    
+    // List files in uploads/categories/
+    if (fs.existsSync(categoriesDir)) {
+      categoriesFiles = fs.readdirSync(categoriesDir).filter(file => 
+        fs.statSync(`${categoriesDir}/${file}`).isFile()
+      );
+    }
+    
+    res.json({
+      success: true,
+      uploadsDir: {
+        exists: fs.existsSync(uploadsDir),
+        files: uploadsFiles,
+        count: uploadsFiles.length
+      },
+      categoriesDir: {
+        exists: fs.existsSync(categoriesDir),
+        files: categoriesFiles,
+        count: categoriesFiles.length
+      }
+    });
+  } catch (error) {
+    res.json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Debug route to check food items and their image URLs
 debugRouter.get("/food-images", async (req, res) => {
   try {
