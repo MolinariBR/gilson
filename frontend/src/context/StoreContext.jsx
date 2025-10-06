@@ -7,11 +7,10 @@ export const StoreContext = createContext(null);
 
 const StoreContextProvider = (props) => {
   const [cartItems, setCartItems] = useState({});
-  // FORÇAR URL LOCAL PARA DESENVOLVIMENTO
-  const url = "http://localhost:4000";
+  const url = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
   
   // Debug: Log da URL sendo usada
-  console.log("🔧 Backend URL FORÇADA:", url);
+  console.log("🔧 Backend URL:", url);
   console.log("🔧 Environment:", import.meta.env.MODE);
   console.log("🔧 VITE_BACKEND_URL:", import.meta.env.VITE_BACKEND_URL);
   const [token, setToken] = useState("");
