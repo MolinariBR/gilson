@@ -50,7 +50,10 @@
     cursor: pointer;
     border-radius: 50%;
     transition: 0.2s;
-    display: none; /* Ocultar imagens por padrão */
+    display: block; /* Mostrar imagens */
+    margin-bottom: 8px;
+    object-fit: cover;
+    aspect-ratio: 1;
 }
 
 .explore-menu-list-item p{
