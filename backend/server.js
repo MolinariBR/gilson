@@ -179,23 +179,23 @@ app.use('/assets', (req, res, next) => {
   try {
     // NOVOS NOMES DOS ARQUIVOS APÓS REBUILD
     
-    // Frontend CSS (mesmo nome)
-    if (req.path.includes('index-C6a7aT4-.css')) {
+    // Frontend CSS (NOVO NOME APÓS REBUILD)
+    if (req.path.includes('index-CnlQtNPM.css')) {
       logger.assets.info('Servindo CSS do frontend');
       res.setHeader('Content-Type', 'text/css');
       res.setHeader('Cache-Control', 'no-cache');
-      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-C6a7aT4-.css'));
+      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-CnlQtNPM.css'));
     }
     
-    // Frontend JS (NOVO NOME FINAL)
-    if (req.path.includes('index-A0OTgVYs.js')) {
+    // Frontend JS (NOVO NOME APÓS REBUILD)
+    if (req.path.includes('index-BdtqqC9W.js')) {
       logger.assets.info('Servindo JS do frontend - forçando MIME type');
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('CF-Cache-Status', 'BYPASS');
       res.setHeader('CF-Rocket-Loader', 'off');
-      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-A0OTgVYs.js'));
+      return res.sendFile(path.join(__dirname, '../frontend/dist/assets/index-BdtqqC9W.js'));
     }
     
     // Admin CSS (NOVO NOME)
