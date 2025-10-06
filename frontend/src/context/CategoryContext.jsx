@@ -46,31 +46,8 @@ export const CategoryContextProvider = ({ children }) => {
       console.error('Failed to fetch categories:', err);
       setError(err.message);
       
-      // Criar categorias padrão para pastelaria
-      const defaultCategories = [
-        {
-          menu_name: "Pastéis",
-          original_name: "Pasteis",
-          slug: "pasteis",
-          isActive: true,
-          menu_image: null
-        },
-        {
-          menu_name: "Caldos",
-          original_name: "Caldos", 
-          slug: "caldos",
-          isActive: true,
-          menu_image: null
-        },
-        {
-          menu_name: "Bebidas",
-          original_name: "Bebidas",
-          slug: "bebidas", 
-          isActive: true,
-          menu_image: null
-        }
-      ];
-      setCategories(defaultCategories);
+      // Não usar categorias padrão - deixar vazio para que o admin crie
+      setCategories([]);
       setUseFallback(true);
       
       // Show error toast but don't block functionality
