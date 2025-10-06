@@ -262,7 +262,7 @@ class CategoryService {
         if (!uploadResult.success) {
           return uploadResult;
         }
-        sanitizedData.image = uploadResult.filename;
+        sanitizedData.image = uploadResult.path;
       } else {
         // Image is required - return validation error if not provided
         return {
@@ -525,7 +525,7 @@ class CategoryService {
         if (!uploadResult.success) {
           return uploadResult;
         }
-        sanitizedData.image = uploadResult.filename;
+        sanitizedData.image = uploadResult.url;
       }
 
       // Update category
