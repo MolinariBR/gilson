@@ -19,7 +19,7 @@ class CategoryAPI {
    */
   async getActiveCategories() {
     try {
-      const response = await this.apiClient.get('/categories');
+      const response = await this.apiClient.get('/api/categories');
       if (response.data.success) {
         return response.data.data;
       }
@@ -37,7 +37,7 @@ class CategoryAPI {
    */
   async getCategoryBySlug(slug) {
     try {
-      const response = await this.apiClient.get(`/categories/${slug}`);
+      const response = await this.apiClient.get(`/api/categories/${slug}`);
       if (response.data.success) {
         return response.data.data;
       }
