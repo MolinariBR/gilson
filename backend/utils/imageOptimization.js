@@ -220,7 +220,7 @@ class ImageOptimizer {
           ? ((originalSize - optimizedSize) / originalSize * 100).toFixed(2)
           : '0';
 
-        logger.images.info(`Image optimized: ${path.basename(inputPath)} (${originalSize}B → ${optimizedSize}B, ${compressionRatio}% reduction)`);
+        logger.image.upload.success(path.basename(inputPath), outputPath, 0);
 
         return {
           success: true,
@@ -249,7 +249,7 @@ class ImageOptimizer {
         };
       }
     } catch (error) {
-      logger.images.error('Error optimizing image:', error);
+      logger.system.error('Error optimizing image:', error);
       return {
         success: false,
         error: error.message

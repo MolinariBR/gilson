@@ -56,7 +56,7 @@ class ImageCompressionMiddleware {
 
       next();
     } catch (error) {
-      logger.images.error('Image compression middleware error:', error);
+      logger.system.error('Image compression middleware error:', error);
       // Don't fail the request if compression fails
       next();
     }
@@ -87,7 +87,7 @@ class ImageCompressionMiddleware {
 
       // Check file size
       if (file.size > this.maxImageSize) {
-        logger.images.warn(`Image too large for compression: ${file.filename} (${file.size} bytes)`);
+        logger.system.warn(`Image too large for compression: ${file.filename} (${file.size} bytes)`);
         return {
           success: false,
           error: 'Image too large for compression'
@@ -98,7 +98,7 @@ class ImageCompressionMiddleware {
       const result = await this.optimizer.optimizeImage(file.path);
       
       if (result.success && !result.skipped) {
-        logger.images.info(`Image compressed: ${file.filename} - ${result.compressionRatio} reduction`);
+        logger.system.info(`Image compressed: ${file.filename} - ${result.compressionRatio} reduction`);
         
         // If optimization created a new file, replace the original
         if (result.outputPath && result.outputPath !== file.path) {
@@ -116,7 +116,7 @@ class ImageCompressionMiddleware {
 
       return result;
     } catch (error) {
-      logger.images.error(`Error processing uploaded file ${file?.filename}:`, error);
+      logger.system.error(`Error processing uploaded file ${file?.filename}:`, error);
       return {
         success: false,
         error: error.message
@@ -140,7 +140,7 @@ class ImageCompressionMiddleware {
         ? ((totalSavings / totalOriginalSize) * 100).toFixed(2)
         : '0';
 
-      logger.images.info(`Batch compression completed: ${results.length} images, ${totalSavings} bytes saved (${avgCompressionRatio}% average reduction)`);
+      logger.system.info(`Batch compression completed: ${results.length} images, ${totalSavings} bytes saved (${avgCompressionRatio}% average reduction)`);
     }
     
     next();

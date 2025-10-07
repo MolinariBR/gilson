@@ -452,7 +452,7 @@ app.use("/uploads", express.static("uploads", {
       res.setHeader('X-Content-Type-Options', 'nosniff');
       
       // Log image serving for performance monitoring
-      logger.images.info(`Serving optimized image: ${path.basename(filePath)} (${ext})`);
+      logger.assets.info(`Serving optimized image: ${path.basename(filePath)} (${ext})`);
     }
   }
 }));
