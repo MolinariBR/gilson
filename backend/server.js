@@ -181,6 +181,37 @@ app.use(cors(corsOptions));
 // Apply MIME type fixer globally
 app.use(mimeTypeFixer);
 
+// Middleware para interceptar e corrigir MIME types incorretos
+app.use((req, res, next) => {
+  const originalSend = res.send;
+  const originalJson = res.json;
+  
+  res.send = function(data) {
+    const ext = path.extname(req.path).toLowerCase();
+    
+    // Forçar MIME type correto baseado na extensão
+    if (ext === '.css' && res.getHeader('Content-Type') !== 'text/css; charset=utf-8') {
+      logger.assets.warn(`Corrigindo MIME type para CSS: ${req.path}`);
+      res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    } else if ((ext === '.js' || ext === '.mjs') && !res.getHeader('Content-Type')?.includes('javascript')) {
+      logger.assets.warn(`Corrigindo MIME type para JS: ${req.path}`);
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    }
+    
+    return originalSend.call(this, data);
+  };
+  
+  res.json = function(data) {
+    // Só aplicar JSON MIME type se não for um asset
+    if (!req.path.includes('/assets/')) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    }
+    return originalJson.call(this, data);
+  };
+  
+  next();
+});
+
 // Middleware global para logging e headers
 app.use((req, res, next) => {
   const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
@@ -196,13 +227,16 @@ app.use((req, res, next) => {
   res.setHeader('X-Powered-By', 'Express');
   res.setHeader('X-Debug-Timestamp', Date.now().toString());
   
-  // Headers anti-Cloudflare apenas se necessário
-  if (process.env.DISABLE_CLOUDFLARE === 'true') {
-    res.setHeader('CF-Cache-Status', 'BYPASS');
-    res.setHeader('CF-Rocket-Loader', 'off');
-    res.setHeader('CF-Mirage', 'off');
-    res.setHeader('CF-Polish', 'off');
-  }
+  // Headers anti-Cloudflare SEMPRE ATIVOS para resolver problemas
+  res.setHeader('CF-Cache-Status', 'BYPASS');
+  res.setHeader('CF-Rocket-Loader', 'off');
+  res.setHeader('CF-Mirage', 'off');
+  res.setHeader('CF-Polish', 'off');
+  res.setHeader('CF-ScrapeShield', 'off');
+  
+  // Headers adicionais para forçar bypass do Cloudflare
+  res.setHeader('Cache-Control', 'no-transform');
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow, nosnippet, noarchive');
   
   next();
 });
@@ -232,33 +266,131 @@ app.use((req, res, next) => {
   next();
 });
 
-// CRITICAL: Servir assets estáticos com handler otimizado
-app.use('/assets', 
-  createAssetHandler('../frontend/dist/assets', {
-    maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
-    enableCaching: process.env.NODE_ENV === 'production',
-    logRequests: true
-  }),
-  express.static(path.join(__dirname, '../frontend/dist/assets'), {
-    maxAge: process.env.NODE_ENV === 'production' ? 86400000 : 0, // 1 day in ms
-    etag: true,
-    lastModified: true
-  })
-);
+// CRITICAL: Servir assets estáticos com MIME types forçados
+app.use('/assets', (req, res, next) => {
+  const ext = path.extname(req.path).toLowerCase();
+  
+  // FORÇAR MIME types corretos ANTES de qualquer processamento
+  if (ext === '.css') {
+    res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  } else if (ext === '.js' || ext === '.mjs') {
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  } else if (ext === '.png') {
+    res.setHeader('Content-Type', 'image/png');
+  } else if (ext === '.jpg' || ext === '.jpeg') {
+    res.setHeader('Content-Type', 'image/jpeg');
+  } else if (ext === '.svg') {
+    res.setHeader('Content-Type', 'image/svg+xml');
+  }
+  
+  // Headers anti-Cloudflare FORÇADOS
+  res.setHeader('CF-Cache-Status', 'BYPASS');
+  res.setHeader('CF-Rocket-Loader', 'off');
+  res.setHeader('CF-Mirage', 'off');
+  res.setHeader('CF-Polish', 'off');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  
+  // Cache headers
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+  } else {
+    res.setHeader('Cache-Control', 'no-cache');
+  }
+  
+  logger.assets.info(`Asset request: ${req.path} - MIME: ${res.getHeader('Content-Type')}`);
+  next();
+}, express.static(path.join(__dirname, '../frontend/dist/assets')));
 
-// Assets do admin com handler otimizado
-app.use('/admin/assets',
-  createAssetHandler('../admin/dist/assets', {
-    maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
-    enableCaching: process.env.NODE_ENV === 'production',
-    logRequests: true
-  }),
-  express.static(path.join(__dirname, '../admin/dist/assets'), {
-    maxAge: process.env.NODE_ENV === 'production' ? 86400000 : 0,
-    etag: true,
-    lastModified: true
-  })
-);
+// Assets do admin com MIME types forçados
+app.use('/admin/assets', (req, res, next) => {
+  const ext = path.extname(req.path).toLowerCase();
+  
+  // FORÇAR MIME types corretos
+  if (ext === '.css') {
+    res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  } else if (ext === '.js' || ext === '.mjs') {
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  } else if (ext === '.png') {
+    res.setHeader('Content-Type', 'image/png');
+  } else if (ext === '.jpg' || ext === '.jpeg') {
+    res.setHeader('Content-Type', 'image/jpeg');
+  }
+  
+  // Headers anti-Cloudflare
+  res.setHeader('CF-Cache-Status', 'BYPASS');
+  res.setHeader('CF-Rocket-Loader', 'off');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  
+  logger.assets.info(`Admin asset: ${req.path} - MIME: ${res.getHeader('Content-Type')}`);
+  next();
+}, express.static(path.join(__dirname, '../admin/dist/assets')));
+
+// Rota de fallback para assets específicos que estão falhando
+app.get('/assets/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const ext = path.extname(filename).toLowerCase();
+  
+  // Tentar encontrar o arquivo em ambos os diretórios
+  const possiblePaths = [
+    path.join(__dirname, '../frontend/dist/assets', filename),
+    path.join(__dirname, '../admin/dist/assets', filename)
+  ];
+  
+  let filePath = null;
+  for (const possiblePath of possiblePaths) {
+    if (fs.existsSync(possiblePath)) {
+      filePath = possiblePath;
+      break;
+    }
+  }
+  
+  if (!filePath) {
+    logger.assets.error(`Asset não encontrado: ${filename}`);
+    return res.status(404).json({
+      success: false,
+      message: 'Asset not found',
+      filename: filename
+    });
+  }
+  
+  // Definir MIME type correto ANTES de enviar
+  const mimeTypes = {
+    '.css': 'text/css; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.mjs': 'application/javascript; charset=utf-8',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.webp': 'image/webp'
+  };
+  
+  if (mimeTypes[ext]) {
+    res.setHeader('Content-Type', mimeTypes[ext]);
+  }
+  
+  // Headers anti-Cloudflare forçados
+  res.setHeader('CF-Rocket-Loader', 'off');
+  res.setHeader('CF-Cache-Status', 'BYPASS');
+  res.setHeader('CF-Mirage', 'off');
+  res.setHeader('CF-Polish', 'off');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'no-transform, no-cache');
+  
+  logger.assets.info(`Servindo asset via fallback: ${filename} - MIME: ${mimeTypes[ext] || 'default'}`);
+  
+  try {
+    res.sendFile(filePath);
+  } catch (error) {
+    logger.assets.error(`Erro ao servir asset ${filename}:`, error);
+    res.status(500).json({
+      success: false,
+      message: 'Error serving asset',
+      filename: filename
+    });
+  }
+});
 
 // Rota de teste para verificar headers anti-Cloudflare
 app.get('/test-headers', (req, res) => {
