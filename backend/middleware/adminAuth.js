@@ -6,10 +6,25 @@ import userModel from "../models/userModel.js";
  * Ensures only authenticated admin users can access protected routes
  */
 const adminAuthMiddleware = async (req, res, next) => {
+  // Set timeout for admin auth
+  const timeoutId = setTimeout(() => {
+    if (!res.headersSent) {
+      console.error('Admin auth timeout for request:', req.url);
+      res.status(408).json({
+        success: false,
+        message: "Authentication timeout - please try again",
+        code: "AUTH_TIMEOUT"
+      });
+    }
+  }, 15000); // 15 seconds timeout
+
   try {
+    console.log('Admin auth check for:', req.url);
+    
     // Check if token exists
     const { token } = req.headers;
     if (!token) {
+      clearTimeout(timeoutId);
       return res.status(401).json({ 
         success: false, 
         message: "Token de acesso não fornecido. Faça login novamente.",
@@ -45,8 +60,10 @@ const adminAuthMiddleware = async (req, res, next) => {
     }
 
     // Check if user exists and is admin
-    const userData = await userModel.findById(decodedToken.id);
+    console.log('Looking up user in database...');
+    const userData = await userModel.findById(decodedToken.id).maxTimeMS(10000); // 10s DB timeout
     if (!userData) {
+      clearTimeout(timeoutId);
       return res.status(401).json({ 
         success: false, 
         message: "Usuário não encontrado. Faça login novamente.",
@@ -56,6 +73,7 @@ const adminAuthMiddleware = async (req, res, next) => {
 
     // Verify admin role
     if (userData.role !== "admin") {
+      clearTimeout(timeoutId);
       return res.status(403).json({ 
         success: false, 
         message: "Acesso negado. Apenas administradores podem acessar este recurso.",
@@ -73,14 +91,30 @@ const adminAuthMiddleware = async (req, res, next) => {
     // Add userId to body for backward compatibility
     req.body.userId = userData._id;
 
+    // Clear timeout before proceeding
+    clearTimeout(timeoutId);
+    console.log('Admin auth successful for user:', userData.name);
+    
     next();
   } catch (error) {
+    clearTimeout(timeoutId);
     console.error("Error in admin auth middleware:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Erro interno do servidor na autenticação",
-      code: "AUTH_ERROR"
-    });
+    
+    if (!res.headersSent) {
+      if (error.name === 'MongoTimeoutError' || error.message.includes('timeout')) {
+        return res.status(408).json({
+          success: false,
+          message: "Database timeout during authentication - please try again",
+          code: "DB_TIMEOUT"
+        });
+      }
+      
+      return res.status(500).json({
+        success: false,
+        message: "Erro interno do servidor na autenticação",
+        code: "AUTH_ERROR"
+      });
+    }
   }
 };
 
