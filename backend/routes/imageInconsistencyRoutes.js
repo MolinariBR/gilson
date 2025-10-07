@@ -9,7 +9,7 @@
 
 import express from 'express';
 import ImageInconsistencyService from '../services/imageInconsistencyService.js';
-import { adminAuth } from '../middleware/adminAuth.js';
+import { adminAuthMiddleware as adminAuth } from '../middleware/adminAuth.js';
 import { logger } from '../utils/logger.js';
 
 const router = express.Router();
