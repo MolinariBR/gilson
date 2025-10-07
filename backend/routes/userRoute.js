@@ -6,6 +6,32 @@ const userRouter = express.Router();
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
 
+// Debug route for categories
+userRouter.get("/debug-categories", async (req, res) => {
+  try {
+    const categoryModel = (await import("../models/categoryModel.js")).default;
+    const categories = await categoryModel.find({}).lean();
+    
+    res.json({
+      success: true,
+      count: categories.length,
+      categories: categories.map(cat => ({
+        _id: cat._id,
+        name: cat.name,
+        originalName: cat.originalName,
+        image: cat.image,
+        isActive: cat.isActive,
+        slug: cat.slug
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Test route for admin login debugging
 userRouter.post("/test-login", async (req, res) => {
   const startTime = Date.now();

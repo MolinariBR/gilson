@@ -81,11 +81,20 @@ const ExploreMenu = ({category, setCategory}) => {
                 lazy={true}
                 rootMargin="150px"
                 onError={(e) => {
-                  console.warn(`Failed to load category image: ${item.menu_image} for category: ${item.menu_name}`);
+                  console.error(`❌ Failed to load category image:`, {
+                    category: item.menu_name,
+                    imageSrc: item.menu_image,
+                    baseUrl: url,
+                    fullUrl: item.menu_image ? `${url}${item.menu_image}` : 'No image',
+                    error: e
+                  });
                 }}
                 onLoad={() => {
-                  // Optional: Log successful image loads for debugging
-                  // console.log(`Successfully loaded category image: ${item.menu_image}`);
+                  console.log(`✅ Successfully loaded category image:`, {
+                    category: item.menu_name,
+                    imageSrc: item.menu_image,
+                    fullUrl: item.menu_image ? `${url}${item.menu_image}` : 'No image'
+                  });
                 }}
               />
               <p>{item.menu_name}</p>
