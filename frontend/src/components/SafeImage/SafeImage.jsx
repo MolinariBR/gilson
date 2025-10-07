@@ -78,12 +78,13 @@ const SafeImage = ({
     setHasError(false);
     setIsLoading(true);
     
-    if (src && baseUrl) {
+    if (src && src.startsWith('http')) {
+      // Handle absolute URLs - use directly without baseUrl
+      setImageSrc(src);
+    } else if (src && baseUrl) {
+      // Handle relative URLs - resolve with baseUrl
       const resolvedUrl = resolveImageUrl(src, baseUrl);
       setImageSrc(resolvedUrl);
-    } else if (src && src.startsWith('http')) {
-      // Handle absolute URLs
-      setImageSrc(src);
     } else {
       // No valid source, use fallback
       setImageSrc(fallback);
