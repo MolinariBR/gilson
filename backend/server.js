@@ -15,6 +15,7 @@ import { logger, errorHandler } from "./utils/logger.js";
 import testRouter from "./routes/testRoute.js";
 import debugRouter from "./routes/debugRoute.js";
 
+
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -248,47 +249,40 @@ connectDB();
 
 // api endpoints
 app.use("/api/food", foodRouter);
-// Servir uploads em /uploads para manter compatibilidade com URLs geradas
-app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+// Serve uploads directory for static files with optimized caching headers
+app.use("/uploads", express.static("uploads", {
+  maxAge: '1y', // Cache for 1 year
+  etag: true,
+  lastModified: true,
   setHeaders: (res, filePath) => {
-    console.log(`📸 Servindo imagem: ${path.basename(filePath)}`);
+    const ext = path.extname(filePath).toLowerCase();
     
-    // Definir MIME types corretos para imagens
-    if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/jpeg');
-    } else if (filePath.endsWith('.png')) {
-      res.setHeader('Content-Type', 'image/png');
-    } else if (filePath.endsWith('.gif')) {
-      res.setHeader('Content-Type', 'image/gif');
-    } else if (filePath.endsWith('.webp')) {
-      res.setHeader('Content-Type', 'image/webp');
+    // Set proper MIME types and caching headers for images
+    if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
+      // Cache images for 1 year with revalidation
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('Vary', 'Accept-Encoding');
+      
+      // Set proper MIME types
+      const mimeTypes = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml'
+      };
+      
+      if (mimeTypes[ext]) {
+        res.setHeader('Content-Type', mimeTypes[ext]);
+      }
+      
+      // Add compression hint
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      
+      // Log image serving for performance monitoring
+      logger.images.info(`Serving optimized image: ${path.basename(filePath)} (${ext})`);
     }
-    
-    // Headers para cache e anti-Cloudflare
-    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache por 1 dia
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('CF-Cache-Status', 'BYPASS');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('X-Image-Served', 'true');
-  }
-}));
-
-// Manter /images para compatibilidade com código antigo
-app.use("/images", express.static(path.join(__dirname, "uploads"), {
-  setHeaders: (res, filePath) => {
-    console.log(`📸 Servindo imagem (legacy): ${path.basename(filePath)}`);
-    
-    if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/jpeg');
-    } else if (filePath.endsWith('.png')) {
-      res.setHeader('Content-Type', 'image/png');
-    }
-    
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('CF-Cache-Status', 'BYPASS');
-    res.setHeader('Access-Control-Allow-Origin', '*');
   }
 }));
 app.use("/api/user", userRouter);

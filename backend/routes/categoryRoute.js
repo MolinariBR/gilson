@@ -24,6 +24,8 @@ import {
   validateUploadedFile, 
   cleanupOnError 
 } from "../middleware/fileUploadSecurity.js";
+import { createImageValidationMiddleware, handleMulterError } from "../middleware/imageValidation.js";
+import imageCompressionMiddleware from "../middleware/imageCompression.js";
 import { 
   sanitizeCategoryInput, 
   validateSpecificFields, 
@@ -41,6 +43,9 @@ import {
 
 const categoryRouter = express.Router();
 
+// Create image validation middleware for category images
+const categoryImageValidation = createImageValidationMiddleware('image', 'uploads/categories');
+
 // Apply global middleware to all routes
 categoryRouter.use(setSecurityHeaders);
 categoryRouter.use(addSecurityHeaders);
@@ -53,13 +58,13 @@ categoryRouter.post("/admin/categories",
   adminAuthMiddleware,
   adminRateLimit(),
   adminActionLogger('CREATE_CATEGORY'),
-  secureImageUpload,
-  handleUploadErrors,
+  categoryImageValidation,
+  handleMulterError,
+  imageCompressionMiddleware.compressUploadedImages,
+  imageCompressionMiddleware.logCompressionResults,
   sanitizeCategoryInput,
   validateSpecificFields(['name']),
-  validateUploadedFile,
-  createCategory,
-  cleanupOnError
+  createCategory
 );
 
 categoryRouter.get("/admin/categories", 
@@ -83,11 +88,11 @@ categoryRouter.put("/admin/categories/:id",
   adminRateLimit(),
   adminActionLogger('UPDATE_CATEGORY'),
   sanitizeCategoryInput,
-  secureImageUpload,
-  handleUploadErrors,
-  validateUploadedFile,
-  updateCategory,
-  cleanupOnError
+  categoryImageValidation,
+  handleMulterError,
+  imageCompressionMiddleware.compressUploadedImages,
+  imageCompressionMiddleware.logCompressionResults,
+  updateCategory
 );
 
 categoryRouter.delete("/admin/categories/:id", 
@@ -102,11 +107,11 @@ categoryRouter.post("/admin/categories/upload",
   adminAuthMiddleware,
   adminRateLimit(),
   adminActionLogger('UPLOAD_CATEGORY_IMAGE'),
-  secureImageUpload,
-  handleUploadErrors,
-  validateUploadedFile,
-  uploadCategoryImage,
-  cleanupOnError
+  categoryImageValidation,
+  handleMulterError,
+  imageCompressionMiddleware.compressUploadedImages,
+  imageCompressionMiddleware.logCompressionResults,
+  uploadCategoryImage
 );
 
 // Performance and maintenance routes (Admin only)

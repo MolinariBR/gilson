@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import "./CategoryCard.css";
 import { getAdminTranslation } from "../../constants/adminTranslations";
 import DeleteConfirmation from "./DeleteConfirmation";
+import SafeImage from "../SafeImage/SafeImage";
+import { StoreContext } from "../../context/StoreContext";
 
 const CategoryCard = ({ category, onEdit, onDelete, onToggleStatus }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { url } = useContext(StoreContext);
   
   const handleEdit = () => {
     onEdit(category);
@@ -27,30 +30,18 @@ const CategoryCard = ({ category, onEdit, onDelete, onToggleStatus }) => {
     onToggleStatus(category._id, category.isActive);
   };
 
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return '/placeholder-category.png';
-    
-    // If it's already a full URL, return as is
-    if (imagePath.startsWith('http')) return imagePath;
-    
-    // If it starts with /, it's already a proper path
-    if (imagePath.startsWith('/')) return imagePath;
-    
-    // Otherwise, assume it's a relative path from uploads
-    return `/${imagePath}`;
-  };
+
 
   return (
     <>
       <div className="category-card">
         <div className="list-table-format">
           <div className="category-image">
-            <img 
-              src={getImageUrl(category.image)} 
+            <SafeImage 
+              src={category.image}
+              baseUrl={url}
+              fallback="/placeholder-category.svg"
               alt={category.name}
-              onError={(e) => {
-                e.target.src = '/placeholder-category.png';
-              }}
             />
           </div>
           

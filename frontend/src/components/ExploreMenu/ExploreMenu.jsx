@@ -1,11 +1,14 @@
-import React from "react";
+import React, { useContext } from "react";
 import "./ExploreMenu.css";
 import { TRANSLATIONS } from "../../constants/translations";
 import { getCategoryEnglish } from "../../constants/categories";
 import { useCategories } from "../../hooks/useCategories";
+import SafeImage from "../SafeImage/SafeImage";
+import { StoreContext } from "../../context/StoreContext";
 
 const ExploreMenu = ({category, setCategory}) => {
   const { categories, loading, error, useFallback, retryFetch } = useCategories();
+  const { url } = useContext(StoreContext);
 
   // Loading state
   if (loading) {
@@ -70,16 +73,21 @@ const ExploreMenu = ({category, setCategory}) => {
               key={item._id || index} 
               className={`explore-menu-list-item ${category === item.original_name ? "active" : ""}`}
             >
-              {item.menu_image && (
-                <img 
-                  src={item.menu_image} 
-                  alt={item.menu_name}
-                  onError={(e) => {
-                    // Hide image if it fails to load
-                    e.target.style.display = 'none';
-                  }}
-                />
-              )}
+              <SafeImage
+                src={item.menu_image}
+                baseUrl={url}
+                fallback="/placeholder-category.svg"
+                alt={item.menu_name}
+                lazy={true}
+                rootMargin="150px"
+                onError={(e) => {
+                  console.warn(`Failed to load category image: ${item.menu_image} for category: ${item.menu_name}`);
+                }}
+                onLoad={() => {
+                  // Optional: Log successful image loads for debugging
+                  // console.log(`Successfully loaded category image: ${item.menu_image}`);
+                }}
+              />
               <p>{item.menu_name}</p>
             </div>
           );

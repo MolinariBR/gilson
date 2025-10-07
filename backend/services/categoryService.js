@@ -262,6 +262,7 @@ class CategoryService {
         if (!uploadResult.success) {
           return uploadResult;
         }
+        // Ensure consistent image path format starting with /uploads/
         sanitizedData.image = uploadResult.path;
       } else {
         // Image is required - return validation error if not provided
@@ -285,10 +286,13 @@ class CategoryService {
       // Clear cache after creating new category
       this.clearCache();
 
+      // Process image URLs to ensure consistency
+      const processedCategory = this.processCategoryImageUrls(savedCategory.toObject());
+
       return {
         success: true,
         message: "Categoria criada com sucesso",
-        data: savedCategory
+        data: processedCategory
       };
     } catch (error) {
       console.error("Error creating category:", error);
@@ -312,9 +316,11 @@ class CategoryService {
       const cachedData = this.getFromCache(cacheKey);
       
       if (cachedData) {
+        // Process cached data to ensure image URL consistency
+        const processedCachedData = this.processCategoryImageUrls(cachedData);
         return {
           success: true,
-          data: cachedData,
+          data: processedCachedData,
           cached: true
         };
       }
@@ -327,12 +333,15 @@ class CategoryService {
         .sort({ order: 1, createdAt: 1 })
         .lean(); // Use lean() for better performance
 
+      // Process image URLs to ensure consistency
+      const processedCategories = this.processCategoryImageUrls(categories);
+
       // Cache the result
-      this.setCache(cacheKey, categories);
+      this.setCache(cacheKey, processedCategories);
 
       return {
         success: true,
-        data: categories
+        data: processedCategories
       };
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -363,9 +372,11 @@ class CategoryService {
       const cachedData = this.getFromCache(cacheKey);
       
       if (cachedData) {
+        // Process cached data to ensure image URL consistency
+        const processedCachedData = this.processCategoryImageUrls(cachedData);
         return {
           success: true,
-          data: cachedData,
+          data: processedCachedData,
           cached: true
         };
       }
@@ -382,12 +393,15 @@ class CategoryService {
         };
       }
 
+      // Process image URLs to ensure consistency
+      const processedCategory = this.processCategoryImageUrls(category);
+
       // Cache the result
-      this.setCache(cacheKey, category);
+      this.setCache(cacheKey, processedCategory);
 
       return {
         success: true,
-        data: category
+        data: processedCategory
       };
     } catch (error) {
       console.error("Error fetching category by ID:", error);
@@ -418,9 +432,11 @@ class CategoryService {
       const cachedData = this.getFromCache(cacheKey);
       
       if (cachedData) {
+        // Process cached data to ensure image URL consistency
+        const processedCachedData = this.processCategoryImageUrls(cachedData);
         return {
           success: true,
-          data: cachedData,
+          data: processedCachedData,
           cached: true
         };
       }
@@ -437,12 +453,15 @@ class CategoryService {
         };
       }
 
+      // Process image URLs to ensure consistency
+      const processedCategory = this.processCategoryImageUrls(category);
+
       // Cache the result
-      this.setCache(cacheKey, category);
+      this.setCache(cacheKey, processedCategory);
 
       return {
         success: true,
-        data: category
+        data: processedCategory
       };
     } catch (error) {
       console.error("Error fetching category by slug:", error);
@@ -525,6 +544,7 @@ class CategoryService {
         if (!uploadResult.success) {
           return uploadResult;
         }
+        // Ensure consistent image path format starting with /uploads/
         sanitizedData.image = uploadResult.url;
       }
 
@@ -538,10 +558,13 @@ class CategoryService {
       // Clear cache after updating category
       this.clearCache();
 
+      // Process image URLs to ensure consistency
+      const processedCategory = this.processCategoryImageUrls(updatedCategory.toObject());
+
       return {
         success: true,
         message: "Categoria atualizada com sucesso",
-        data: updatedCategory
+        data: processedCategory
       };
     } catch (error) {
       console.error("Error updating category:", error);
@@ -790,7 +813,38 @@ class CategoryService {
     if (!imageName) {
       return null;
     }
+    // If imageName already contains the full path, return as is
+    if (imageName.startsWith('/uploads/')) {
+      return imageName;
+    }
+    // Otherwise, construct the full path
     return `/uploads/categories/${imageName}`;
+  }
+
+  /**
+   * Process category data to ensure consistent image URLs
+   * @param {Object|Array} categoryData - Category data (single object or array)
+   * @returns {Object|Array} - Processed category data with consistent image URLs
+   */
+  processCategoryImageUrls(categoryData) {
+    if (!categoryData) {
+      return categoryData;
+    }
+
+    // Handle array of categories
+    if (Array.isArray(categoryData)) {
+      return categoryData.map(category => this.processCategoryImageUrls(category));
+    }
+
+    // Handle single category
+    if (categoryData.image) {
+      // Ensure image URL is consistent and starts with /uploads/
+      if (!categoryData.image.startsWith('/uploads/')) {
+        categoryData.image = this.generateCategoryImageUrl(categoryData.image);
+      }
+    }
+
+    return categoryData;
   }
 
   /**

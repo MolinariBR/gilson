@@ -24,7 +24,13 @@ const categorySchema = new mongoose.Schema({
   image: { 
     type: String, 
     required: true,
-    trim: true
+    trim: true,
+    validate: {
+      validator: function(v) {
+        return v.startsWith('/uploads/');
+      },
+      message: 'Image path must start with /uploads/'
+    }
   },
   isActive: { 
     type: Boolean, 

@@ -1,0 +1,65 @@
+{
+  "timestamp": "2025-10-06T22:03:37.040Z",
+  "migration": "image-urls",
+  "version": "1.0.0",
+  "counts": {
+    "foods": 2,
+    "categories": 2
+  },
+  "data": {
+    "foods": [
+      {
+        "_id": "68e3f0bdf723c655c2afcc36",
+        "name": "Pastel de Carne",
+        "description": "Pastel de Carne frito no oleo do coco babaçu. Carne com tempero da casa.",
+        "price": 6,
+        "image": "/uploads/1759768765400pastelcarne.jpg",
+        "category": "Pasteis",
+        "categoryId": "68e3d539869f00a67611edda",
+        "categoryName": "Pasteis",
+        "createdAt": "2025-10-06T16:39:25.673Z",
+        "updatedAt": "2025-10-06T17:24:26.975Z",
+        "__v": 0
+      },
+      {
+        "_id": "68e41b5be553ff9905a9f8ef",
+        "name": "Hineken LongNeck",
+        "description": "Cerveja Hineken LongNeck",
+        "price": 9,
+        "image": "/uploads/hinekenlong_1759779675026.jpeg",
+        "category": "Cervejas",
+        "categoryId": "68e41b01e553ff9905a9f8e8",
+        "categoryName": "Cervejas",
+        "createdAt": "2025-10-06T19:41:15.263Z",
+        "updatedAt": "2025-10-06T19:41:15.263Z",
+        "__v": 0
+      }
+    ],
+    "categories": [
+      {
+        "_id": "68e3d539869f00a67611edda",
+        "name": "Pasteis",
+        "originalName": "Pasteis",
+        "slug": "pasteis",
+        "image": "/uploads/categories/category_1759773442221.jpg",
+        "isActive": true,
+        "order": 1,
+        "createdAt": "2025-10-06T14:42:01.633Z",
+        "updatedAt": "2025-10-06T17:57:22.224Z",
+        "__v": 0
+      },
+      {
+        "_id": "68e41b01e553ff9905a9f8e8",
+        "name": "Cervejas",
+        "originalName": "Cervejas",
+        "slug": "cervejas",
+        "image": "/uploads/categories/cervejas_1759779585147.jpg",
+        "isActive": true,
+        "order": 2,
+        "createdAt": "2025-10-06T19:39:45.155Z",
+        "updatedAt": "2025-10-06T19:39:45.155Z",
+        "__v": 0
+      }
+    ]
+  }
+}

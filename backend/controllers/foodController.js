@@ -3,6 +3,33 @@ import userModel from "../models/userModel.js";
 import categoryModel from "../models/categoryModel.js";
 import fs from "fs";
 
+// Helper function to ensure consistent image path format
+const normalizeImagePath = (imagePath) => {
+  if (!imagePath) return null;
+  
+  // Ensure path starts with /uploads/
+  if (imagePath.startsWith('/uploads/')) {
+    return imagePath;
+  }
+  
+  // Handle case where path already starts with uploads/ (without leading slash)
+  if (imagePath.startsWith('uploads/')) {
+    return `/${imagePath}`;
+  }
+  
+  // Remove any leading slashes and add /uploads/
+  const cleanPath = imagePath.replace(/^\/+/, '');
+  return `/uploads/${cleanPath}`;
+};
+
+// Helper function to get file system path from database path
+const getFileSystemPath = (dbImagePath) => {
+  if (!dbImagePath) return null;
+  
+  // Remove leading slash for file system operations
+  return dbImagePath.startsWith('/') ? dbImagePath.substring(1) : dbImagePath;
+};
+
 // Helper function to resolve category information
 const resolveCategoryInfo = async (categoryInput) => {
   if (!categoryInput) {
@@ -58,7 +85,7 @@ const addFood = async (req, res) => {
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
-      image: `/uploads/${image_filename}`,
+      image: normalizeImagePath(image_filename), // Ensure consistent path format
     };
 
     // Set category fields based on what we found
@@ -86,13 +113,18 @@ const listFood = async (req, res) => {
   try {
     const foods = await foodModel.find({}).populate('categoryId', 'name originalName slug');
     
-    // Transform data to ensure backward compatibility
+    // Transform data to ensure backward compatibility and consistent image URLs
     const transformedFoods = foods.map(food => {
       const foodObj = food.toObject();
       
       // Ensure category field is populated for backward compatibility
       if (food.categoryId && !foodObj.category) {
         foodObj.category = food.categoryId.originalName || food.categoryId.name;
+      }
+      
+      // Ensure consistent image URL format
+      if (foodObj.image) {
+        foodObj.image = normalizeImagePath(foodObj.image);
       }
       
       return foodObj;
@@ -111,7 +143,11 @@ const removeFood = async (req, res) => {
     let userData = await userModel.findById(req.body.userId);
     if (userData && userData.role === "admin") {
       const food = await foodModel.findById(req.body.id);
-      fs.unlink(`uploads/${food.image}`, () => {});
+      // Use helper function to get correct file system path
+      const imagePath = getFileSystemPath(food.image);
+      if (imagePath) {
+        fs.unlink(imagePath, () => {});
+      }
       await foodModel.findByIdAndDelete(req.body.id);
       res.json({ success: true, message: "Food Removed" });
     } else {
@@ -151,13 +187,18 @@ const listFoodsByCategory = async (req, res) => {
       index === self.findIndex(f => f._id.toString() === food._id.toString())
     );
 
-    // Transform data for backward compatibility
+    // Transform data for backward compatibility and consistent image URLs
     const transformedFoods = uniqueFoods.map(food => {
       const foodObj = food.toObject();
       
       // Ensure category field is populated
       if (food.categoryId && !foodObj.category) {
         foodObj.category = food.categoryId.originalName || food.categoryId.name;
+      }
+      
+      // Ensure consistent image URL format
+      if (foodObj.image) {
+        foodObj.image = normalizeImagePath(foodObj.image);
       }
       
       return foodObj;
@@ -201,9 +242,13 @@ const updateFood = async (req, res) => {
     if (req.file) {
       const food = await foodModel.findById(req.body.id);
       if (food && food.image) {
-        fs.unlink(`uploads/${food.image}`, () => {});
+        // Use helper function to get correct file system path
+        const imagePath = getFileSystemPath(food.image);
+        if (imagePath) {
+          fs.unlink(imagePath, () => {});
+        }
       }
-      updateData.image = `/uploads/${req.file.filename}`;
+      updateData.image = normalizeImagePath(req.file.filename);
     }
 
     await foodModel.findByIdAndUpdate(req.body.id, updateData);
@@ -215,4 +260,4 @@ const updateFood = async (req, res) => {
   }
 };
 
-export { addFood, listFood, removeFood, listFoodsByCategory, updateFood, resolveCategoryInfo };
+export { addFood, listFood, removeFood, listFoodsByCategory, updateFood, resolveCategoryInfo, normalizeImagePath, getFileSystemPath };

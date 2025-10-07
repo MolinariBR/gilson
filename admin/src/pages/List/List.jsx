@@ -6,6 +6,7 @@ import { useContext } from "react";
 import { StoreContext } from "../../context/StoreContext";
 import { useNavigate } from "react-router-dom";
 import { getAdminTranslation, getCategoryTranslation } from "../../constants/adminTranslations";
+import SafeImage from "../../components/SafeImage/SafeImage";
 
 const List = ({ url }) => {
   const navigate = useNavigate();
@@ -56,7 +57,13 @@ const List = ({ url }) => {
         {list.map((item, index) => {
           return (
             <div key={index} className="list-table-format">
-              <img src={`${url}/images/` + item.image} alt="" />
+              <SafeImage 
+                src={item.image} 
+                baseUrl={url} 
+                fallback="/placeholder-food.svg"
+                alt={item.name || "Food item"}
+                className="list-item-image"
+              />
               <p>{item.name}</p>
               <p>{item.category}</p>
               <p>R${item.price}</p>

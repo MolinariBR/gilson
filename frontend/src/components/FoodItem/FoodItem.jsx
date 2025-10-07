@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import "./FoodItem.css";
 import { assets } from "../../assets/frontend_assets/assets";
 import { StoreContext } from "../../context/StoreContext";
+import SafeImage from "../SafeImage/SafeImage";
 
 const FoodItem = ({ id, name, price, description, image }) => {
   const {cartItems,addToCart,removeFromCart,url}=useContext(StoreContext); 
@@ -9,10 +10,14 @@ const FoodItem = ({ id, name, price, description, image }) => {
   return (
     <div className="food-item">
       <div className="food-item-img-container">
-        <img 
-          src={image.startsWith('http') ? image : url + image} 
-          alt="" 
+        <SafeImage 
+          src={image}
+          baseUrl={url}
+          fallback="/placeholder-food.svg"
+          alt={name || "Food item"}
           className="food-item-image"
+          lazy={true}
+          rootMargin="100px"
         />
         {!cartItems[id] ? (
           <img

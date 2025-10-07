@@ -1,25 +1,17 @@
 import express from "express";
-import { addFood, listFood, removeFood } from "../controllers/foodController.js";
-import multer from "multer";
+import { addFood, listFood, removeFood, updateFood } from "../controllers/foodController.js";
 import authMiddleware from "../middleware/auth.js";
+import { createImageValidationMiddleware, handleMulterError } from "../middleware/imageValidation.js";
+import imageCompressionMiddleware from "../middleware/imageCompression.js";
 
 const foodRouter = express.Router();
 
-// Image Storage Engine
+// Create image validation middleware for food images
+const foodImageValidation = createImageValidationMiddleware('image', 'uploads');
 
-const storage= multer.diskStorage({
-    destination:"uploads",
-    filename:(req,file,cb)=>{
-        const timestamp = Date.now();
-        const originalName = file.originalname.replace(/\s+/g, '_'); // Replace spaces with underscores
-        return cb(null,`${originalName.split('.')[0]}_${timestamp}.${originalName.split('.').pop()}`)
-    }
-})
-
-const upload= multer({storage:storage})
-
-foodRouter.post("/add",upload.single("image"),authMiddleware,addFood);
-foodRouter.get("/list",listFood);
-foodRouter.post("/remove",authMiddleware,removeFood);
+foodRouter.post("/add", foodImageValidation, handleMulterError, imageCompressionMiddleware.compressUploadedImages, imageCompressionMiddleware.logCompressionResults, authMiddleware, addFood);
+foodRouter.get("/list", listFood);
+foodRouter.put("/update", foodImageValidation, handleMulterError, imageCompressionMiddleware.compressUploadedImages, imageCompressionMiddleware.logCompressionResults, authMiddleware, updateFood);
+foodRouter.post("/remove", authMiddleware, removeFood);
 
 export default foodRouter;

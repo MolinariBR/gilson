@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodItem Image Loading Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-case { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .test-case h3 { margin-top: 0; }
+        img { max-width: 200px; height: 150px; object-fit: cover; border: 1px solid #ccc; }
+        .expected { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>FoodItem Image Loading Test Cases</h1>
+    <p>This file demonstrates how the updated FoodItem component should handle various image URL formats.</p>
+    
+    <div class="test-case">
+        <h3>Test Case 1: Standard /uploads/ path</h3>
+        <p><strong>Input:</strong> image="/uploads/food/pizza.jpg", baseUrl="http://localhost:4000"</p>
+        <p class="expected"><strong>Expected:</strong> Should resolve to "http://localhost:4000/uploads/food/pizza.jpg"</p>
+        <p><strong>Fallback:</strong> If image fails to load, should show placeholder-food.svg</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>Test Case 2: Relative path</h3>
+        <p><strong>Input:</strong> image="food/burger.jpg", baseUrl="http://localhost:4000"</p>
+        <p class="expected"><strong>Expected:</strong> Should resolve to "http://localhost:4000/uploads/food/burger.jpg"</p>
+        <p><strong>Fallback:</strong> If image fails to load, should show placeholder-food.svg</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>Test Case 3: Full HTTP URL</h3>
+        <p><strong>Input:</strong> image="https://example.com/image.jpg", baseUrl="http://localhost:4000"</p>
+        <p class="expected"><strong>Expected:</strong> Should use the full URL as-is</p>
+        <p><strong>Fallback:</strong> If image fails to load, should show placeholder-food.svg</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>Test Case 4: Empty/null image</h3>
+        <p><strong>Input:</strong> image="", baseUrl="http://localhost:4000"</p>
+        <p class="expected"><strong>Expected:</strong> Should immediately show placeholder-food.svg</p>
+    </div>
+    
+    <div class="test-case">
+        <h3>Test Case 5: Invalid/broken image</h3>
+        <p><strong>Input:</strong> image="/uploads/food/nonexistent.jpg", baseUrl="http://localhost:4000"</p>
+        <p class="expected"><strong>Expected:</strong> Should try to load the image, fail, then show placeholder-food.svg</p>
+    </div>
+
+    <h2>Implementation Summary</h2>
+    <ul>
+        <li>✅ Replaced direct img tag with SafeImage component</li>
+        <li>✅ SafeImage uses imageUtils.resolveImageUrl for URL resolution</li>
+        <li>✅ Added proper fallback image (/placeholder-food.svg)</li>
+        <li>✅ Improved alt text using food name</li>
+        <li>✅ Maintains all existing functionality (cart buttons, styling)</li>
+        <li>✅ Added comprehensive tests for various URL formats</li>
+        <li>✅ Created placeholder images for fallback scenarios</li>
+    </ul>
+
+    <h2>Benefits</h2>
+    <ul>
+        <li><strong>Consistent URL handling:</strong> All image URLs are processed through the same logic</li>
+        <li><strong>Error resilience:</strong> Broken images gracefully fall back to placeholder</li>
+        <li><strong>Better accessibility:</strong> Proper alt text using food names</li>
+        <li><strong>Maintainable:</strong> Centralized image logic in reusable components</li>
+        <li><strong>Testable:</strong> Comprehensive test coverage for different scenarios</li>
+    </ul>
+</body>
+</html>
