@@ -7,28 +7,26 @@ export const connectDB = async () => {
     const mongoUrl = "mongodb+srv://zews21_db_user:AgaFhZK9pzoRxkGC@cluster0.0imkrwc.mongodb.net/pastel-delivery?retryWrites=true&w=majority&appName=Cluster0";
     
     logger.database.info("Tentando conectar ao MongoDB...");
-    logger.database.info(`URL hardcoded: ${mongoUrl.substring(0, 50)}...`);
-    logger.database.info(`URL do ambiente: ${process.env.MONGO_URL ? process.env.MONGO_URL.substring(0, 50) + "..." : "NÃO DEFINIDA"}`);
+    logger.database.info(`URL: ${mongoUrl.substring(0, 50)}...`);
     
-    // Configurações otimizadas para evitar timeouts
+    // Configure mongoose settings BEFORE connecting
+    mongoose.set('strictQuery', false);
+    mongoose.set('bufferCommands', false);
+    mongoose.set('bufferMaxEntries', 0);
+    
+    // Simplified options to avoid parsing errors
     const options = {
-      serverSelectionTimeoutMS: 30000, // 30 seconds
-      socketTimeoutMS: 45000, // 45 seconds
-      connectTimeoutMS: 30000, // 30 seconds
-      maxPoolSize: 10, // Maximum number of connections
-      minPoolSize: 2, // Minimum number of connections
-      maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-      bufferCommands: false, // Disable mongoose buffering
-      bufferMaxEntries: 0, // Disable mongoose buffering
-      heartbeatFrequencyMS: 10000, // Heartbeat every 10 seconds
-      retryWrites: true,
-      retryReads: true
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 30000,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      maxIdleTimeMS: 30000,
+      heartbeatFrequencyMS: 10000
     };
     
+    logger.database.info("Conectando com opções simplificadas...");
     await mongoose.connect(mongoUrl, options);
-    
-    // Configure mongoose settings
-    mongoose.set('strictQuery', false);
     
     // Handle connection events
     mongoose.connection.on('connected', () => {
