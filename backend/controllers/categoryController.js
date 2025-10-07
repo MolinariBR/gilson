@@ -125,62 +125,42 @@ const getCategoryById = async (req, res) => {
   }
 };
 
-// Update category (Admin only)
+// Update category (Admin only) - DEBUG VERSION
 const updateCategory = async (req, res) => {
-  const startTime = Date.now();
-  const userId = req.user?.id || 'unknown';
-  const categoryId = req.params.id;
+  console.log('=== UPDATE CATEGORY CONTROLLER DEBUG ===');
+  console.log('Method:', req.method);
+  console.log('URL:', req.url);
+  console.log('Params:', req.params);
+  console.log('Body:', req.body);
+  console.log('File:', req.file ? {
+    fieldname: req.file.fieldname,
+    originalname: req.file.originalname,
+    filename: req.file.filename,
+    size: req.file.size,
+    mimetype: req.file.mimetype
+  } : 'No file');
+  console.log('Headers:', req.headers);
   
   try {
-    // Log API request
-    logger.api.request('PUT', `/api/admin/categories/${categoryId}`, req.ip);
-    logger.backend.info(`Admin ${userId} updating category: ${categoryId}`);
-    
-    // Log image upload if present
-    if (req.file) {
-      logger.image.upload.start(req.file.originalname, req.file.size, req.file.mimetype, userId);
-    }
-    
-    const updateData = {};
-    
-    // Only include fields that are provided
-    if (req.body.name !== undefined) updateData.name = req.body.name;
-    if (req.body.originalName !== undefined) updateData.originalName = req.body.originalName;
-    if (req.body.slug !== undefined) updateData.slug = req.body.slug;
-    if (req.body.isActive !== undefined) updateData.isActive = req.body.isActive;
-    if (req.body.order !== undefined) updateData.order = parseInt(req.body.order);
-
-    const result = await categoryService.updateCategory(categoryId, updateData, req.file);
-    
-    const duration = Date.now() - startTime;
-    
-    if (result.success) {
-      logger.backend.info(`Category updated successfully: ${categoryId} (${duration}ms)`);
-      
-      // Record performance metrics
-      imageLogger.performanceCollector.record('category_update', duration);
-      
-      res.json(result);
-    } else {
-      logger.backend.warn(`Category update failed: ${categoryId} - ${result.message}`);
-      
-      // Log image upload failure if applicable
-      if (req.file && result.errors?.image) {
-        logger.image.upload.error(req.file.originalname, new Error(result.message), userId);
+    // Super simple response for now
+    res.json({
+      success: true,
+      message: "Debug: Controller reached successfully",
+      data: {
+        receivedParams: req.params,
+        receivedBody: req.body,
+        hasFile: !!req.file,
+        fileInfo: req.file ? req.file.filename : null
       }
-      
-      res.status(400).json(result);
-    }
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    logger.api.error(`Error in updateCategory for ${categoryId}:`, error);
+    });
     
-    // Record failed operation metrics
-    imageLogger.performanceCollector.record('category_update_failed', duration);
+  } catch (error) {
+    console.error('=== CONTROLLER ERROR ===');
+    console.error('Error:', error);
     
     res.status(500).json({ 
       success: false, 
-      message: "Erro interno do servidor",
+      message: "Erro no controller",
       error: error.message 
     });
   }
