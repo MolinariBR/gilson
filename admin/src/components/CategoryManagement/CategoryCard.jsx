@@ -42,6 +42,8 @@ const CategoryCard = ({ category, onEdit, onDelete, onToggleStatus }) => {
               baseUrl={url}
               fallback="/placeholder-category.svg"
               alt={category.name}
+              categoryId={category._id}
+              priority="high"
             />
           </div>
           

@@ -350,9 +350,21 @@ export const imageLogger = {
       );
       
       logger.image.upload.success(filename, result.path, duration, userId);
+      
+      // Record metrics for monitoring
+      if (typeof imageLogger.recordUploadMetrics === 'function') {
+        imageLogger.recordUploadMetrics(true, duration, size);
+      }
+      
       return result;
     } catch (error) {
       logger.image.upload.error(filename, error, userId);
+      
+      // Record failed metrics for monitoring
+      if (typeof imageLogger.recordUploadMetrics === 'function') {
+        imageLogger.recordUploadMetrics(false, Date.now() - (error.startTime || Date.now()), size);
+      }
+      
       throw error;
     }
   },
@@ -375,13 +387,28 @@ export const imageLogger = {
       const cached = result.cached || false;
       
       logger.image.serving.success(imagePath, size, duration, cached);
+      
+      // Record metrics for monitoring
+      if (typeof imageLogger.recordServingMetrics === 'function') {
+        imageLogger.recordServingMetrics('success', duration, size);
+      }
+      
       return result;
     } catch (error) {
+      let status = 'error';
+      
       if (error.code === 'ENOENT' || error.status === 404) {
         logger.image.serving.notFound(imagePath, ip);
+        status = 'notFound';
       } else {
         logger.image.serving.error(imagePath, error, ip);
       }
+      
+      // Record metrics for monitoring
+      if (typeof imageLogger.recordServingMetrics === 'function') {
+        imageLogger.recordServingMetrics(status, Date.now() - (error.startTime || Date.now()), 0);
+      }
+      
       throw error;
     }
   },
@@ -412,7 +439,13 @@ export const imageLogger = {
       // Limpar métricas após reportar
       this.operations.clear();
     }
-  }
+  },
+
+  // Integration with monitoring system (will be set by monitoring module)
+  recordUploadMetrics: null,
+  recordServingMetrics: null,
+  recordValidationMetrics: null,
+  recordMaintenanceMetrics: null
 };
 
 // Middleware para logging automático de servir imagens

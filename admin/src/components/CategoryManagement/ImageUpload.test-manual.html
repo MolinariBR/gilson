@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImageUpload Component Manual Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-description {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .test-checklist {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        .test-checklist h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .test-checklist ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .test-checklist li {
+            margin: 8px 0;
+            color: #6c757d;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-title">Enhanced ImageUpload Component - Manual Test Guide</h1>
+        
+        <div class="test-description">
+            <h3>🎯 Test Objective</h3>
+            <p>Verify that the enhanced ImageUpload component correctly implements:</p>
+            <ul>
+                <li><strong>Dimension validation</strong> (100x100px to 2000x2000px)</li>
+                <li><strong>Enhanced preview</strong> with error handling</li>
+                <li><strong>Progress indicators</strong> during upload</li>
+                <li><strong>Aspect ratio validation</strong> (1:2 to 3:1)</li>
+                <li><strong>Robust error handling</strong> and user feedback</li>
+            </ul>
+        </div>
+
+        <div class="test-checklist">
+            <h4>📋 Test Scenarios</h4>
+            
+            <h5>1. Basic Functionality</h5>
+            <ul>
+                <li>✅ Component renders with drag & drop area</li>
+                <li>✅ Shows enhanced format information: "JPG, PNG, WEBP • 100x100px to 2000x2000px • Max 2MB"</li>
+                <li>✅ Click to select files works</li>
+                <li>✅ Drag and drop functionality works</li>
+            </ul>
+
+            <h5>2. File Type Validation</h5>
+            <ul>
+                <li>🔍 Try uploading a .txt file → Should show error: "Please select a valid image file (JPG, PNG, WEBP)"</li>
+                <li>🔍 Try uploading a .pdf file → Should show error</li>
+                <li>✅ Upload valid .jpg, .png, .webp files → Should work</li>
+            </ul>
+
+            <h5>3. File Size Validation</h5>
+            <ul>
+                <li>🔍 Try uploading image > 2MB → Should show error: "Image size must be less than 2MB"</li>
+                <li>✅ Upload image < 2MB → Should work</li>
+            </ul>
+
+            <h5>4. Dimension Validation (NEW)</h5>
+            <ul>
+                <li>🔍 Try uploading image < 100x100px → Should show error: "Image dimensions too small. Minimum 100x100px"</li>
+                <li>🔍 Try uploading image > 2000x2000px → Should show error: "Image dimensions too large. Maximum 2000x2000px"</li>
+                <li>✅ Upload image between 100x100px and 2000x2000px → Should work</li>
+            </ul>
+
+            <h5>5. Aspect Ratio Validation (NEW)</h5>
+            <ul>
+                <li>🔍 Try uploading very wide image (e.g., 1000x200px, 5:1 ratio) → Should show error: "Image aspect ratio should be between 1:2 and 3:1"</li>
+                <li>🔍 Try uploading very tall image (e.g., 200x1000px, 1:5 ratio) → Should show error</li>
+                <li>✅ Upload image with normal aspect ratio → Should work</li>
+            </ul>
+
+            <h5>6. Progress Indicators (NEW)</h5>
+            <ul>
+                <li>✅ During upload, should show progress bar</li>
+                <li>✅ Should show "Validating image..." text initially</li>
+                <li>✅ Should show "Processing image..." text during processing</li>
+                <li>✅ Should show "Complete!" when finished</li>
+                <li>✅ Upload area should be disabled during upload</li>
+            </ul>
+
+            <h5>7. Enhanced Error Display (NEW)</h5>
+            <ul>
+                <li>✅ Validation errors should appear in dedicated error box with warning icon</li>
+                <li>✅ Error box should have dismiss button (×)</li>
+                <li>✅ Upload area should have error styling when validation fails</li>
+                <li>✅ Multiple validation attempts should clear previous errors</li>
+            </ul>
+
+            <h5>8. Enhanced Preview (NEW)</h5>
+            <ul>
+                <li>✅ Should show loading spinner while image loads</li>
+                <li>✅ Should handle image load errors gracefully</li>
+                <li>✅ Should show "Loading image..." text during load</li>
+                <li>✅ Preview should be hidden during upload process</li>
+            </ul>
+        </div>
+
+        <div class="test-description">
+            <h3>🚀 How to Test</h3>
+            <ol>
+                <li>Start the admin development server: <code>npm run dev</code></li>
+                <li>Navigate to the Categories page</li>
+                <li>Click "Add New Category" to open the form</li>
+                <li>Test the ImageUpload component with various files</li>
+                <li>Check each scenario in the checklist above</li>
+            </ol>
+        </div>
+
+        <div class="test-checklist">
+            <h4>🎨 Visual Enhancements to Verify</h4>
+            <ul>
+                <li>✅ Progress bar with animated gradient</li>
+                <li>✅ Error messages with warning icons</li>
+                <li>✅ Smooth transitions and animations</li>
+                <li>✅ Loading spinners for image processing</li>
+                <li>✅ Enhanced format information display</li>
+                <li>✅ Responsive design on mobile devices</li>
+            </ul>
+        </div>
+
+        <div class="test-description">
+            <h3>📝 Test Results</h3>
+            <p>After testing, verify that:</p>
+            <ul>
+                <li class="success">✅ All validation rules work correctly</li>
+                <li class="success">✅ Progress indicators provide clear feedback</li>
+                <li class="success">✅ Error messages are user-friendly and actionable</li>
+                <li class="success">✅ Component handles edge cases gracefully</li>
+                <li class="success">✅ Visual enhancements improve user experience</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

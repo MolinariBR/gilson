@@ -151,10 +151,19 @@ export const ADMIN_TRANSLATIONS = {
     // Image upload
     dragDropImage: "Arraste e solte uma imagem aqui",
     orClickToSelect: "ou clique para selecionar",
-    supportedFormats: "Suportados: JPG, PNG, WEBP (máx 2MB)",
+    supportedFormats: "JPG, PNG, WEBP • 100x100px a 2000x2000px • Máx 2MB",
     clickToChange: "Clique para alterar",
     invalidImageType: "Por favor, selecione um arquivo de imagem válido (JPG, PNG, WEBP)",
-    imageTooLarge: "O tamanho da imagem deve ser menor que 2MB"
+    imageTooLarge: "O tamanho da imagem deve ser menor que 2MB",
+    imageTooSmall: "Dimensões da imagem muito pequenas. Mínimo 100x100px",
+    imageTooBig: "Dimensões da imagem muito grandes. Máximo 2000x2000px",
+    invalidAspectRatio: "Proporção da imagem deve estar entre 1:2 e 3:1",
+    corruptedImage: "O arquivo de imagem parece estar corrompido",
+    processingError: "Erro ao processar imagem",
+    validating: "Validando imagem...",
+    processing: "Processando imagem...",
+    complete: "Completo!",
+    loadingImage: "Carregando imagem..."
   },
 
   // General messages

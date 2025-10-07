@@ -157,6 +157,7 @@ const CategoryForm = ({ category, onSubmit, onCancel, isEditing }) => {
               currentImage={isEditing ? category?.image : null}
               onImageChange={handleImageChange}
               error={errors.image}
+              categoryId={isEditing ? category?._id : null}
             />
             {errors.image && <span className="error-message">{errors.image}</span>}
           </div>

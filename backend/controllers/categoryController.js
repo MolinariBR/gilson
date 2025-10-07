@@ -1,17 +1,25 @@
 import CategoryService from "../services/categoryService.js";
 import userModel from "../models/userModel.js";
+import { logger, imageLogger } from "../utils/logger.js";
+import imageLoggingIntegration from "../utils/imageLoggingIntegration.js";
 
 const categoryService = new CategoryService();
 
 // Create new category (Admin only)
 const createCategory = async (req, res) => {
+  const startTime = Date.now();
+  const userId = req.user?.id || 'unknown';
+  const categoryName = req.body?.name || 'unknown';
+  
   try {
-    // Admin authentication is handled by middleware
-    console.log('=== CREATE CATEGORY DEBUG ===');
-    console.log('Headers:', req.headers);
-    console.log('Received category data:', req.body);
-    console.log('Received file:', req.file);
-    console.log('User from middleware:', req.user);
+    // Log API request
+    logger.api.request('POST', '/api/admin/categories', req.ip);
+    logger.backend.info(`Admin ${userId} creating category: ${categoryName}`);
+    
+    // Log image upload if present
+    if (req.file) {
+      logger.image.upload.start(req.file.originalname, req.file.size, req.file.mimetype, userId);
+    }
     
     const categoryData = {
       name: req.body.name,
@@ -21,20 +29,34 @@ const createCategory = async (req, res) => {
       order: req.body.order || 0
     };
 
-    console.log('Processed category data:', categoryData);
-
     const result = await categoryService.createCategory(categoryData, req.file);
     
-    console.log('Service result:', result);
+    const duration = Date.now() - startTime;
     
     if (result.success) {
+      logger.backend.info(`Category created successfully: ${categoryName} (${duration}ms)`);
+      
+      // Record performance metrics
+      imageLogger.performanceCollector.record('category_creation', duration);
+      
       res.json(result);
     } else {
-      console.log('Returning 400 error:', result);
+      logger.backend.warn(`Category creation failed: ${categoryName} - ${result.message}`);
+      
+      // Log image upload failure if applicable
+      if (req.file && result.errors?.image) {
+        logger.image.upload.error(req.file.originalname, new Error(result.message), userId);
+      }
+      
       res.status(400).json(result);
     }
   } catch (error) {
-    console.error("Error in createCategory:", error);
+    const duration = Date.now() - startTime;
+    logger.api.error(`Error in createCategory for ${categoryName}:`, error);
+    
+    // Record failed operation metrics
+    imageLogger.performanceCollector.record('category_creation_failed', duration);
+    
     res.status(500).json({ 
       success: false, 
       message: "Erro interno do servidor",
@@ -105,8 +127,20 @@ const getCategoryById = async (req, res) => {
 
 // Update category (Admin only)
 const updateCategory = async (req, res) => {
+  const startTime = Date.now();
+  const userId = req.user?.id || 'unknown';
+  const categoryId = req.params.id;
+  
   try {
-    // Admin authentication is handled by middleware
+    // Log API request
+    logger.api.request('PUT', `/api/admin/categories/${categoryId}`, req.ip);
+    logger.backend.info(`Admin ${userId} updating category: ${categoryId}`);
+    
+    // Log image upload if present
+    if (req.file) {
+      logger.image.upload.start(req.file.originalname, req.file.size, req.file.mimetype, userId);
+    }
+    
     const updateData = {};
     
     // Only include fields that are provided
@@ -116,15 +150,34 @@ const updateCategory = async (req, res) => {
     if (req.body.isActive !== undefined) updateData.isActive = req.body.isActive;
     if (req.body.order !== undefined) updateData.order = parseInt(req.body.order);
 
-    const result = await categoryService.updateCategory(req.params.id, updateData, req.file);
+    const result = await categoryService.updateCategory(categoryId, updateData, req.file);
+    
+    const duration = Date.now() - startTime;
     
     if (result.success) {
+      logger.backend.info(`Category updated successfully: ${categoryId} (${duration}ms)`);
+      
+      // Record performance metrics
+      imageLogger.performanceCollector.record('category_update', duration);
+      
       res.json(result);
     } else {
+      logger.backend.warn(`Category update failed: ${categoryId} - ${result.message}`);
+      
+      // Log image upload failure if applicable
+      if (req.file && result.errors?.image) {
+        logger.image.upload.error(req.file.originalname, new Error(result.message), userId);
+      }
+      
       res.status(400).json(result);
     }
   } catch (error) {
-    console.error("Error in updateCategory:", error);
+    const duration = Date.now() - startTime;
+    logger.api.error(`Error in updateCategory for ${categoryId}:`, error);
+    
+    // Record failed operation metrics
+    imageLogger.performanceCollector.record('category_update_failed', duration);
+    
     res.status(500).json({ 
       success: false, 
       message: "Erro interno do servidor",
@@ -135,13 +188,34 @@ const updateCategory = async (req, res) => {
 
 // Delete category (Admin only)
 const deleteCategory = async (req, res) => {
+  const startTime = Date.now();
+  const userId = req.user?.id || 'unknown';
+  const categoryId = req.params.id;
+  
   try {
-    // Admin authentication is handled by middleware
-    const result = await categoryService.deleteCategory(req.params.id);
+    // Log API request
+    logger.api.request('DELETE', `/api/admin/categories/${categoryId}`, req.ip);
+    logger.backend.info(`Admin ${userId} deleting category: ${categoryId}`);
+    
+    const result = await categoryService.deleteCategory(categoryId);
+    
+    const duration = Date.now() - startTime;
     
     if (result.success) {
+      logger.backend.info(`Category deleted successfully: ${categoryId} (${duration}ms)`);
+      
+      // Log image cleanup if any images were removed
+      if (result.cleanedCount > 0) {
+        logger.image.maintenance.cleanup(result.cleanedCount, result.freedSpace || 0);
+      }
+      
+      // Record performance metrics
+      imageLogger.performanceCollector.record('category_deletion', duration);
+      
       res.json(result);
     } else {
+      logger.backend.warn(`Category deletion failed: ${categoryId} - ${result.message}`);
+      
       if (result.code === "CATEGORY_HAS_PRODUCTS") {
         res.status(409).json(result); // Conflict status
       } else {
@@ -149,7 +223,12 @@ const deleteCategory = async (req, res) => {
       }
     }
   } catch (error) {
-    console.error("Error in deleteCategory:", error);
+    const duration = Date.now() - startTime;
+    logger.api.error(`Error in deleteCategory for ${categoryId}:`, error);
+    
+    // Record failed operation metrics
+    imageLogger.performanceCollector.record('category_deletion_failed', duration);
+    
     res.status(500).json({ 
       success: false, 
       message: "Erro interno do servidor",
@@ -327,6 +406,168 @@ const cleanupOptimizedImages = async (req, res) => {
   }
 };
 
+// Perform image integrity check (Admin only)
+const performImageIntegrityCheck = async (req, res) => {
+  try {
+    const result = await categoryService.performImageIntegrityCheck();
+    res.json(result);
+  } catch (error) {
+    console.error("Error in performImageIntegrityCheck:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erro interno do servidor",
+      error: error.message 
+    });
+  }
+};
+
+// Clean up orphaned images (Admin only)
+const cleanupOrphanedImages = async (req, res) => {
+  try {
+    const createBackup = req.query.backup !== 'false'; // Default to true
+    const result = await categoryService.cleanupOrphanedImages(createBackup);
+    res.json(result);
+  } catch (error) {
+    console.error("Error in cleanupOrphanedImages:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erro interno do servidor",
+      error: error.message 
+    });
+  }
+};
+
+// Generate integrity report (Admin only)
+const generateIntegrityReport = async (req, res) => {
+  try {
+    const result = await categoryService.generateIntegrityReport();
+    res.json(result);
+  } catch (error) {
+    console.error("Error in generateIntegrityReport:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erro interno do servidor",
+      error: error.message 
+    });
+  }
+};
+
+// Get storage statistics (Admin only)
+const getStorageStatistics = async (req, res) => {
+  try {
+    const result = await categoryService.getStorageStatistics();
+    res.json(result);
+  } catch (error) {
+    console.error("Error in getStorageStatistics:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erro interno do servidor",
+      error: error.message 
+    });
+  }
+};
+
+// Get image system monitoring status (Admin only)
+const getImageMonitoringStatus = async (req, res) => {
+  try {
+    logger.api.request('GET', '/api/admin/categories/monitoring/status', req.ip);
+    
+    const status = imageLoggingIntegration.getSystemStatus();
+    
+    res.json({
+      success: true,
+      data: status
+    });
+  } catch (error) {
+    logger.api.error("Error in getImageMonitoringStatus:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erro interno do servidor",
+      error: error.message 
+    });
+  }
+};
+
+// Get image performance metrics (Admin only)
+const getImagePerformanceMetrics = async (req, res) => {
+  try {
+    logger.api.request('GET', '/api/admin/categories/monitoring/metrics', req.ip);
+    
+    const timeframe = req.query.timeframe || 'hour';
+    const report = imageLoggingIntegration.generatePerformanceReport(timeframe);
+    
+    res.json({
+      success: true,
+      data: report
+    });
+  } catch (error) {
+    logger.api.error("Error in getImagePerformanceMetrics:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erro interno do servidor",
+      error: error.message 
+    });
+  }
+};
+
+// Get image system alerts (Admin only)
+const getImageSystemAlerts = async (req, res) => {
+  try {
+    logger.api.request('GET', '/api/admin/categories/monitoring/alerts', req.ip);
+    
+    const limit = parseInt(req.query.limit) || 50;
+    const severity = req.query.severity; // 'critical', 'warning', 'info'
+    
+    let alerts = imageLogger.getAlerts();
+    
+    // Filter by severity if specified
+    if (severity) {
+      alerts = alerts.filter(alert => alert.severity === severity);
+    }
+    
+    // Limit results
+    alerts = alerts.slice(-limit);
+    
+    res.json({
+      success: true,
+      data: {
+        alerts,
+        total: alerts.length,
+        filters: { limit, severity }
+      }
+    });
+  } catch (error) {
+    logger.api.error("Error in getImageSystemAlerts:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erro interno do servidor",
+      error: error.message 
+    });
+  }
+};
+
+// Reset image monitoring metrics (Admin only)
+const resetImageMonitoringMetrics = async (req, res) => {
+  try {
+    logger.api.request('POST', '/api/admin/categories/monitoring/reset', req.ip);
+    logger.backend.info(`Admin ${req.user?.id} resetting image monitoring metrics`);
+    
+    imageLogger.resetMetrics();
+    
+    res.json({
+      success: true,
+      message: "Métricas de monitoramento resetadas com sucesso"
+    });
+  } catch (error) {
+    logger.api.error("Error in resetImageMonitoringMetrics:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Erro interno do servidor",
+      error: error.message 
+    });
+  }
+};
+
 export { 
   createCategory, 
   getAllCategories, 
@@ -339,5 +580,13 @@ export {
   getPerformanceStats,
   warmupCache,
   clearCache,
-  cleanupOptimizedImages
+  cleanupOptimizedImages,
+  performImageIntegrityCheck,
+  cleanupOrphanedImages,
+  generateIntegrityReport,
+  getStorageStatistics,
+  getImageMonitoringStatus,
+  getImagePerformanceMetrics,
+  getImageSystemAlerts,
+  resetImageMonitoringMetrics
 };

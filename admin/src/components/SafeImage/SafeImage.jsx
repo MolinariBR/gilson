@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { resolveImageUrl } from '../../utils/imageUtils';
+import { 
+  resolveImageUrl, 
+  isCategoryImage, 
+  getCategoryLazyLoadConfig,
+  getCacheOptimizedImageUrl 
+} from '../../utils/imageUtils';
 
 /**
- * SafeImage component with error handling, fallback support, and lazy loading
+ * SafeImage component with error handling, fallback support, and optimized lazy loading
  * @param {Object} props - Component props
  * @param {string} props.src - Image source path
  * @param {string} props.baseUrl - Base URL for resolving relative paths
@@ -11,8 +16,10 @@ import { resolveImageUrl } from '../../utils/imageUtils';
  * @param {string} props.className - CSS class name
  * @param {Object} props.style - Inline styles
  * @param {boolean} props.lazy - Enable lazy loading (default: false for admin)
- * @param {string} props.rootMargin - Intersection observer root margin (default: '50px')
- * @param {number} props.threshold - Intersection observer threshold (default: 0.1)
+ * @param {string} props.rootMargin - Intersection observer root margin (auto-optimized for categories)
+ * @param {number} props.threshold - Intersection observer threshold (auto-optimized for categories)
+ * @param {string} props.categoryId - Category ID for cache optimization
+ * @param {string} props.priority - Loading priority ('high', 'normal', 'low')
  * @param {Function} props.onLoad - Callback when image loads successfully
  * @param {Function} props.onError - Callback when image fails to load
  * @param {Function} props.onIntersect - Callback when image enters viewport
@@ -26,8 +33,10 @@ const SafeImage = ({
   className = '', 
   style = {},
   lazy = false, // Default to false for admin interface
-  rootMargin = '50px',
-  threshold = 0.1,
+  rootMargin,
+  threshold,
+  categoryId,
+  priority,
   onLoad,
   onError,
   onIntersect,
@@ -37,8 +46,18 @@ const SafeImage = ({
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isIntersecting, setIsIntersecting] = useState(!lazy);
+  const [retryCount, setRetryCount] = useState(0);
   const imgRef = useRef(null);
   const observerRef = useRef(null);
+
+  // Determine if this is a category image and get optimized config
+  const isCategory = isCategoryImage(src);
+  const lazyConfig = getCategoryLazyLoadConfig(isCategory);
+  
+  // Use optimized settings or provided props (admin interface gets less aggressive lazy loading)
+  const effectiveRootMargin = rootMargin || (lazy ? lazyConfig.rootMargin : '10px');
+  const effectiveThreshold = threshold || (lazy ? lazyConfig.threshold : 0.5);
+  const effectivePriority = priority || (isCategory ? 'high' : 'normal');
 
   // Intersection Observer for lazy loading
   useEffect(() => {
@@ -71,26 +90,30 @@ const SafeImage = ({
     };
   }, [lazy, rootMargin, threshold, onIntersect]);
 
-  // Image source resolution
+  // Image source resolution with cache optimization
   useEffect(() => {
     if (!isIntersecting) return;
 
     setHasError(false);
     setIsLoading(true);
+    setRetryCount(0);
     
     if (src && src.startsWith('http')) {
       // Handle absolute URLs - use directly without baseUrl
       setImageSrc(src);
     } else if (src && baseUrl) {
-      // Handle relative URLs - resolve with baseUrl
-      const resolvedUrl = resolveImageUrl(src, baseUrl);
+      // Handle relative URLs with cache optimization for categories
+      const resolvedUrl = isCategory && categoryId 
+        ? getCacheOptimizedImageUrl(src, baseUrl, categoryId)
+        : resolveImageUrl(src, baseUrl);
       setImageSrc(resolvedUrl);
     } else {
-      // No valid source, use fallback
-      setImageSrc(fallback);
+      // No valid source, use category-specific fallback
+      const categoryFallback = isCategory ? '/placeholder-category.svg' : fallback;
+      setImageSrc(categoryFallback);
       setIsLoading(false);
     }
-  }, [src, baseUrl, fallback, isIntersecting]);
+  }, [src, baseUrl, fallback, isIntersecting, isCategory, categoryId]);
 
   const handleLoad = (event) => {
     setIsLoading(false);

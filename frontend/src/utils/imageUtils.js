@@ -26,6 +26,63 @@ export const resolveImageUrl = (imagePath, baseUrl) => {
 };
 
 /**
+ * Determines if an image is a category image based on its path
+ * @param {string} imagePath - The image path to check
+ * @returns {boolean} - True if it's a category image
+ */
+export const isCategoryImage = (imagePath) => {
+  if (!imagePath) return false;
+  
+  // Check if path contains category indicators
+  return imagePath.includes('/categories/') || 
+         imagePath.includes('cat_') ||
+         imagePath.includes('category_');
+};
+
+/**
+ * Gets optimized lazy loading settings for category images
+ * @param {boolean} isCategory - Whether this is a category image
+ * @returns {Object} - Optimized lazy loading configuration
+ */
+export const getCategoryLazyLoadConfig = (isCategory = false) => {
+  if (isCategory) {
+    return {
+      lazy: true,
+      rootMargin: '200px', // Load earlier for category images
+      threshold: 0.05, // Lower threshold for faster loading
+      priority: 'high'
+    };
+  }
+  
+  return {
+    lazy: true,
+    rootMargin: '100px',
+    threshold: 0.1,
+    priority: 'normal'
+  };
+};
+
+/**
+ * Generates cache-optimized URL for category images
+ * @param {string} imagePath - The original image path
+ * @param {string} baseUrl - The base URL
+ * @param {string} categoryId - The category ID for cache optimization
+ * @returns {string} - Cache-optimized URL
+ */
+export const getCacheOptimizedImageUrl = (imagePath, baseUrl, categoryId = null) => {
+  const resolvedUrl = resolveImageUrl(imagePath, baseUrl);
+  if (!resolvedUrl) return null;
+  
+  // For category images, add cache-busting parameter based on category ID
+  if (categoryId && isCategoryImage(imagePath)) {
+    const separator = resolvedUrl.includes('?') ? '&' : '?';
+    return `${resolvedUrl}${separator}v=${categoryId.slice(-8)}`; // Use last 8 chars of ID as version
+  }
+  
+  return resolvedUrl;
+};
+
+/**
  * Gets an image URL with fallback support
  * @param {string} imagePath - The image path from the database
  * @param {string} baseUrl - The base URL of the backend server

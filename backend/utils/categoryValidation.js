@@ -82,7 +82,7 @@ export const validateCategoryData = (categoryData, isUpdate = false) => {
 };
 
 /**
- * Validates image file for category upload
+ * Validates image file for category upload with enhanced checks
  * @param {Object} file - The uploaded file object
  * @returns {Object} - Validation result with isValid and errors
  */
@@ -96,18 +96,106 @@ export const validateCategoryImage = (file) => {
     return { isValid, errors };
   }
 
-  // File type validation (check first)
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+  // Enhanced file type validation
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+  
   if (!allowedTypes.includes(file.mimetype)) {
-    errors.image = 'Formato de imagem inválido. Use PNG, JPG ou JPEG';
+    errors.image = 'Formato de imagem inválido. Use PNG, JPG, JPEG ou WEBP';
     isValid = false;
   }
 
-  // File size validation (2MB max) - only if type is valid
+  // Validate file extension matches MIME type
+  if (file.originalname) {
+    const fileExtension = file.originalname.toLowerCase().split('.').pop();
+    const expectedExtensions = {
+      'image/jpeg': ['jpg', 'jpeg'],
+      'image/jpg': ['jpg', 'jpeg'],
+      'image/png': ['png'],
+      'image/webp': ['webp']
+    };
+    
+    const validExtensions = expectedExtensions[file.mimetype] || [];
+    if (allowedTypes.includes(file.mimetype) && !validExtensions.includes(fileExtension)) {
+      errors.image = 'Extensão do arquivo não corresponde ao tipo de imagem';
+      isValid = false;
+    }
+  }
+
+  // Enhanced file size validation (2MB max)
   if (allowedTypes.includes(file.mimetype)) {
     const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+    const minSize = 1024; // 1KB minimum
+    
     if (file.size > maxSize) {
       errors.image = 'Imagem deve ter no máximo 2MB';
+      isValid = false;
+    } else if (file.size < minSize) {
+      errors.image = 'Arquivo de imagem muito pequeno (mínimo 1KB)';
+      isValid = false;
+    }
+  }
+
+  // Validate filename for security
+  if (file.originalname) {
+    const filename = file.originalname;
+    
+    // Check for dangerous characters
+    if (/[<>:"/\\|?*]/.test(filename)) {
+      errors.image = 'Nome do arquivo contém caracteres inválidos';
+      isValid = false;
+    }
+    
+    // Check filename length
+    if (filename.length > 255) {
+      errors.image = 'Nome do arquivo muito longo (máximo 255 caracteres)';
+      isValid = false;
+    }
+    
+    // Check for path traversal attempts
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      errors.image = 'Nome do arquivo inválido';
+      isValid = false;
+    }
+  }
+
+  return { isValid, errors };
+};
+
+/**
+ * Validates image dimensions and integrity
+ * @param {Object} imageValidation - Image validation data from middleware
+ * @returns {Object} - Validation result
+ */
+export const validateImageDimensions = (imageValidation) => {
+  const errors = {};
+  let isValid = true;
+
+  if (!imageValidation) {
+    errors.image = 'Dados de validação da imagem não encontrados';
+    return { isValid: false, errors };
+  }
+
+  // Check if dimensions are available
+  if (imageValidation.dimensions) {
+    const { width, height } = imageValidation.dimensions;
+    const minWidth = 100;
+    const minHeight = 100;
+    const maxWidth = 2000;
+    const maxHeight = 2000;
+
+    if (width < minWidth || height < minHeight) {
+      errors.image = `Dimensões da imagem muito pequenas (mínimo ${minWidth}x${minHeight}px)`;
+      isValid = false;
+    } else if (width > maxWidth || height > maxHeight) {
+      errors.image = `Dimensões da imagem muito grandes (máximo ${maxWidth}x${maxHeight}px)`;
+      isValid = false;
+    }
+
+    // Check aspect ratio (optional - prevent extremely stretched images)
+    const aspectRatio = width / height;
+    if (aspectRatio < 0.2 || aspectRatio > 5) {
+      errors.image = 'Proporção da imagem inválida (muito esticada)';
       isValid = false;
     }
   }

@@ -7,6 +7,9 @@ import {
   sanitizeCategoryData 
 } from "../utils/categoryValidation.js";
 import ImageOptimizer from "../utils/imageOptimization.js";
+import EnhancedImageProcessor from "../utils/enhancedImageProcessor.js";
+import CategoryImageIntegrity from "../utils/categoryImageIntegrity.js";
+import { logger, imageLogger } from "../utils/logger.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from 'url';
@@ -22,8 +25,10 @@ class CategoryService {
     this.cacheTTL = parseInt(process.env.CATEGORY_CACHE_TTL) || 3600000; // 1 hour default
     this.maxCacheSize = parseInt(process.env.CATEGORY_CACHE_MAX_SIZE) || 100;
     
-    // Image optimizer
+    // Image processors
     this.imageOptimizer = new ImageOptimizer();
+    this.enhancedImageProcessor = new EnhancedImageProcessor();
+    this.imageIntegrity = new CategoryImageIntegrity();
     
     // Cache keys
     this.CACHE_KEYS = {
@@ -256,32 +261,62 @@ class CategoryService {
         };
       }
 
-      // Handle image upload if provided
-      if (imageFile) {
-        const uploadResult = await this.uploadCategoryImage(imageFile);
-        if (!uploadResult.success) {
-          return uploadResult;
-        }
-        // Ensure consistent image path format starting with /uploads/
-        sanitizedData.image = uploadResult.path;
-      } else {
-        // Image is required - return validation error if not provided
-        return {
-          success: false,
-          message: "Imagem da categoria é obrigatória",
-          errors: { image: "Imagem da categoria é obrigatória" }
-        };
-      }
-
       // Set order if not provided (next available order)
       if (sanitizedData.order === 0) {
         const maxOrder = await categoryModel.findOne({}, {}, { sort: { order: -1 } });
         sanitizedData.order = maxOrder ? maxOrder.order + 1 : 1;
       }
 
-      // Create category
+      // Create category first to get the ID
       const category = new categoryModel(sanitizedData);
       const savedCategory = await category.save();
+
+      // Handle image upload if provided - now we have the category ID
+      if (imageFile) {
+        const uploadResult = await this.processImageUpload(
+          imageFile, 
+          savedCategory._id.toString()
+        );
+        
+        if (!uploadResult.success) {
+          // If image upload fails, delete the created category to maintain consistency
+          await categoryModel.findByIdAndDelete(savedCategory._id);
+          return {
+            success: false,
+            message: uploadResult.message,
+            errors: uploadResult.errors || { image: uploadResult.message },
+            code: uploadResult.code
+          };
+        }
+        
+        // Validate that the uploaded image follows unique naming convention
+        if (!this.validateCategoryImageAssociation(savedCategory._id.toString(), uploadResult.filename)) {
+          // Clean up uploaded image and delete category
+          await this.deleteCategoryImage(uploadResult.filename);
+          await categoryModel.findByIdAndDelete(savedCategory._id);
+          
+          return {
+            success: false,
+            message: "Erro na validação de nomenclatura única da imagem",
+            errors: { image: "Imagem não segue padrão de nomenclatura única" },
+            code: "UNIQUE_NAMING_VALIDATION_FAILED"
+          };
+        }
+        
+        // Update category with the unique image path
+        savedCategory.image = uploadResult.path || uploadResult.url;
+        await savedCategory.save();
+        
+        console.log(`Category ${savedCategory._id} created with unique image: ${uploadResult.filename}`);
+      } else {
+        // Image is required - delete the created category and return validation error
+        await categoryModel.findByIdAndDelete(savedCategory._id);
+        return {
+          success: false,
+          message: "Imagem da categoria é obrigatória",
+          errors: { image: "Imagem da categoria é obrigatória" }
+        };
+      }
 
       // Clear cache after creating new category
       this.clearCache();
@@ -540,12 +575,38 @@ class CategoryService {
 
       // Handle image upload if provided
       if (imageFile) {
-        const uploadResult = await this.processImageUpload(imageFile, existingCategory.image);
+        const uploadResult = await this.processImageUpload(
+          imageFile, 
+          id, 
+          existingCategory.image
+        );
+        
         if (!uploadResult.success) {
-          return uploadResult;
+          return {
+            success: false,
+            message: uploadResult.message,
+            errors: uploadResult.errors || { image: uploadResult.message },
+            code: uploadResult.code
+          };
         }
+        
+        // Validate that the uploaded image follows unique naming convention
+        if (!this.validateCategoryImageAssociation(id, uploadResult.filename)) {
+          // Clean up uploaded image
+          await this.deleteCategoryImage(uploadResult.filename);
+          
+          return {
+            success: false,
+            message: "Erro na validação de nomenclatura única da imagem",
+            errors: { image: "Imagem não segue padrão de nomenclatura única" },
+            code: "UNIQUE_NAMING_VALIDATION_FAILED"
+          };
+        }
+        
         // Ensure consistent image path format starting with /uploads/
-        sanitizedData.image = uploadResult.url;
+        sanitizedData.image = uploadResult.path || uploadResult.url;
+        
+        console.log(`Category ${id} updated with unique image: ${uploadResult.filename}`);
       }
 
       // Update category
@@ -609,9 +670,13 @@ class CategoryService {
         };
       }
 
-      // Delete category image if it exists
-      if (category.image) {
-        await this.deleteCategoryImage(category.image);
+      // Clean up all images associated with this category
+      const cleanupResult = await this.cleanupCategoryImages(id);
+      if (!cleanupResult.success) {
+        console.warn(`Failed to cleanup images for category ${id}:`, cleanupResult.message);
+        // Continue with category deletion even if image cleanup fails
+      } else if (cleanupResult.cleanedCount > 0) {
+        console.log(`Cleaned up ${cleanupResult.cleanedCount} images for category ${id}`);
       }
 
       // Delete category
@@ -685,75 +750,261 @@ class CategoryService {
   }
 
   /**
-   * Upload category image with validation
-   * @param {Object} imageFile - The uploaded image file
-   * @returns {Promise<Object>} - Upload result with filename or error
+   * Generate unique image name for category
+   * @param {string} categoryId - Category ID
+   * @param {string} originalFilename - Original filename
+   * @returns {string} - Unique filename in format cat_[categoryId]_[timestamp].[ext]
    */
-  async uploadCategoryImage(imageFile) {
+  generateUniqueImageName(categoryId, originalFilename) {
+    const timestamp = Date.now();
+    const fileExtension = path.extname(originalFilename);
+    return `cat_${categoryId}_${timestamp}${fileExtension}`;
+  }
+
+  /**
+   * Validate that image filename contains category ID and follows unique naming pattern
+   * @param {string} categoryId - Category ID
+   * @param {string} imagePath - Image path or filename
+   * @returns {boolean} - Whether filename contains category ID and follows pattern
+   */
+  validateCategoryImageAssociation(categoryId, imagePath) {
     try {
-      // Validate image file
-      const validation = validateCategoryImage(imageFile);
-      if (!validation.isValid) {
+      if (!categoryId || !imagePath) {
+        return false;
+      }
+      
+      // Extract filename from path
+      const filename = path.basename(imagePath);
+      
+      // Check if filename follows the pattern cat_[categoryId]_[timestamp]_[random].[ext]
+      const expectedPrefix = `cat_${categoryId}_`;
+      
+      if (!filename.startsWith(expectedPrefix)) {
+        return false;
+      }
+      
+      // Validate the complete pattern with regex
+      const pattern = new RegExp(`^cat_${categoryId}_\\d+_\\d+\\.[a-zA-Z0-9]+$`);
+      const isValidPattern = pattern.test(filename);
+      
+      if (!isValidPattern) {
+        console.warn(`Image filename ${filename} does not match expected pattern for category ${categoryId}`);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error validating category image association:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Get all images associated with a specific category
+   * @param {string} categoryId - Category ID
+   * @returns {Promise<Array>} - Array of image filenames associated with the category
+   */
+  async getCategoryAssociatedImages(categoryId) {
+    try {
+      if (!categoryId) {
+        return [];
+      }
+
+      const categoryDir = this.getCategoryImagePath();
+      if (!fs.existsSync(categoryDir)) {
+        return [];
+      }
+
+      const files = fs.readdirSync(categoryDir);
+      const associatedImages = files.filter(filename => 
+        this.validateCategoryImageAssociation(categoryId, filename)
+      );
+
+      return associatedImages;
+    } catch (error) {
+      console.error("Error getting category associated images:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Clean up all images associated with a category (used when deleting category)
+   * @param {string} categoryId - Category ID
+   * @returns {Promise<Object>} - Cleanup result
+   */
+  async cleanupCategoryImages(categoryId) {
+    const startTime = Date.now();
+    
+    try {
+      if (!categoryId) {
+        logger.image.maintenance.cleanup(0, 0);
         return {
           success: false,
-          message: "Imagem inválida",
-          errors: validation.errors
+          message: "ID da categoria é obrigatório"
         };
       }
 
-      // Use original filename with timestamp to avoid conflicts
-      const timestamp = Date.now();
-      const originalName = path.parse(imageFile.originalname).name;
-      const fileExtension = path.extname(imageFile.originalname);
-      const filename = `${originalName}_${timestamp}${fileExtension}`;
+      logger.image.maintenance.cleanup(0, 0); // Start cleanup log
       
-      // Create categories upload directory if it doesn't exist
-      const uploadDir = this.getCategoryImagePath();
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
+      const associatedImages = await this.getCategoryAssociatedImages(categoryId);
+      let cleanedCount = 0;
+      let totalFreedSpace = 0;
+      const errors = [];
 
-      // Move file to categories directory
-      const filePath = path.join(uploadDir, filename);
-      
-      // Use copyFileSync and unlinkSync instead of renameSync to handle cross-device moves
-      fs.copyFileSync(imageFile.path, filePath);
-      fs.unlinkSync(imageFile.path);
+      logger.backend.info(`Iniciando limpeza de ${associatedImages.length} imagens para categoria ${categoryId}`);
 
-      // Optimize image if needed
-      const optimizationResult = await this.imageOptimizer.optimizeImage(filePath);
-      let finalFilename = filename;
-      let optimizationInfo = null;
-
-      if (optimizationResult.success && !optimizationResult.skipped) {
-        // If optimization created a new file, use that instead
-        if (optimizationResult.outputPath !== filePath) {
-          finalFilename = path.basename(optimizationResult.outputPath);
-          // Remove original unoptimized file
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+      for (const imageName of associatedImages) {
+        try {
+          // Get file size before deletion for metrics
+          const imagePath = path.join(this.getCategoryImagePath(), imageName);
+          let fileSize = 0;
+          
+          if (fs.existsSync(imagePath)) {
+            fileSize = fs.statSync(imagePath).size;
           }
+
+          const deleteResult = await this.deleteCategoryImage(imageName);
+          if (deleteResult.success) {
+            cleanedCount++;
+            totalFreedSpace += fileSize;
+            logger.image.file.deleted(imagePath, `category cleanup for ${categoryId}`);
+          } else {
+            errors.push(`Failed to delete ${imageName}: ${deleteResult.message}`);
+            logger.image.serving.error(imagePath, new Error(deleteResult.message), 'cleanup');
+          }
+        } catch (error) {
+          errors.push(`Error deleting ${imageName}: ${error.message}`);
+          logger.image.file.corrupted(imageName, error);
         }
-        optimizationInfo = {
-          originalSize: optimizationResult.originalSize,
-          optimizedSize: optimizationResult.optimizedSize,
-          compressionRatio: optimizationResult.compressionRatio
+      }
+
+      const duration = Date.now() - startTime;
+      
+      // Log cleanup completion
+      logger.image.maintenance.cleanup(cleanedCount, totalFreedSpace);
+      
+      // Record performance metrics
+      imageLogger.performanceCollector.record('category_image_cleanup', duration);
+
+      return {
+        success: true,
+        message: `Limpeza concluída: ${cleanedCount} imagens removidas`,
+        cleanedCount,
+        totalFound: associatedImages.length,
+        freedSpace: totalFreedSpace,
+        duration,
+        errors: errors.length > 0 ? errors : null
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      logger.image.maintenance.cleanup(0, 0);
+      logger.backend.error("Error cleaning up category images:", error);
+      
+      // Record failed operation metrics
+      imageLogger.performanceCollector.record('category_image_cleanup_failed', duration);
+
+      return {
+        success: false,
+        message: "Erro ao limpar imagens da categoria",
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Upload category image with validation and unique naming
+   * @param {Object} imageFile - The uploaded image file
+   * @param {string} categoryId - Category ID for unique naming (required for unique images)
+   * @returns {Promise<Object>} - Upload result with filename or error
+   */
+  async uploadCategoryImage(imageFile, categoryId = null) {
+    const startTime = Date.now();
+    const filename = imageFile?.originalname || 'unknown';
+    const size = imageFile?.size || 0;
+    const mimetype = imageFile?.mimetype || 'unknown';
+
+    try {
+      // Log upload start
+      logger.image.upload.start(filename, size, mimetype, categoryId);
+
+      // CategoryId is now required for unique image system
+      if (!categoryId) {
+        logger.image.upload.validation.failed(filename, "ID da categoria é obrigatório", categoryId);
+        return {
+          success: false,
+          message: "ID da categoria é obrigatório para nomenclatura única",
+          errors: { categoryId: "ID da categoria é obrigatório" }
         };
       }
+
+      // Use enhanced image processor for comprehensive validation and processing
+      const result = await imageLogger.logUpload(
+        () => this.enhancedImageProcessor.processImageUpload(imageFile, categoryId),
+        filename,
+        size,
+        mimetype,
+        categoryId
+      );
+
+      if (!result.success) {
+        logger.image.upload.validation.failed(filename, result.message, categoryId);
+        return {
+          success: false,
+          message: result.message,
+          errors: result.errors || { image: result.message },
+          code: result.code
+        };
+      }
+
+      // Validate association to ensure proper unique naming
+      if (!this.validateCategoryImageAssociation(categoryId, result.filename)) {
+        logger.image.upload.validation.failed(filename, "Nome do arquivo não corresponde à categoria", categoryId);
+        
+        // Clean up uploaded file if association validation fails
+        await this.deleteCategoryImage(result.filename);
+        
+        return {
+          success: false,
+          message: "Erro na associação da imagem com a categoria",
+          errors: { image: "Nome do arquivo não corresponde à categoria" },
+          code: "INVALID_IMAGE_ASSOCIATION"
+        };
+      }
+
+      // Log successful validation
+      logger.image.upload.validation.passed(filename, ["type", "size", "dimensions", "association"], categoryId);
+
+      // Log file creation
+      logger.image.file.created(result.path, result.size);
+
+      const duration = Date.now() - startTime;
+      
+      // Check for slow upload performance
+      logger.image.performance.slowUpload(filename, duration);
+
+      // Record performance metrics
+      imageLogger.performanceCollector.record('category_image_upload', duration);
 
       return {
         success: true,
         message: "Imagem enviada com sucesso",
-        filename: finalFilename,
-        path: `/uploads/categories/${finalFilename}`,
-        optimization: optimizationInfo
+        filename: result.filename,
+        path: result.path,
+        size: result.size,
+        optimization: result.optimization
       };
     } catch (error) {
-      console.error("Error uploading category image:", error);
+      const duration = Date.now() - startTime;
+      logger.image.upload.error(filename, error, categoryId);
+      
+      // Record failed operation metrics
+      imageLogger.performanceCollector.record('category_image_upload_failed', duration);
+
       return {
         success: false,
         message: "Erro ao fazer upload da imagem",
-        error: error.message
+        error: error.message,
+        code: "UPLOAD_ERROR"
       };
     }
   }
@@ -766,6 +1017,7 @@ class CategoryService {
   async deleteCategoryImage(imageName) {
     try {
       if (!imageName) {
+        logger.image.file.deleted('none', 'no image to delete');
         return {
           success: true,
           message: "Nenhuma imagem para deletar"
@@ -775,19 +1027,31 @@ class CategoryService {
       const imagePath = path.join(this.getCategoryImagePath(), imageName);
       
       if (fs.existsSync(imagePath)) {
+        // Get file size before deletion for logging
+        const stats = fs.statSync(imagePath);
+        const fileSize = stats.size;
+        
         fs.unlinkSync(imagePath);
+        
+        // Log successful deletion
+        logger.image.file.deleted(imagePath, 'manual deletion');
+        
         return {
           success: true,
-          message: "Imagem deletada com sucesso"
+          message: "Imagem deletada com sucesso",
+          deletedSize: fileSize
         };
       } else {
+        // Log missing file
+        logger.image.serving.notFound(imagePath, 'deletion-attempt');
+        
         return {
           success: true,
           message: "Imagem não encontrada, nada para deletar"
         };
       }
     } catch (error) {
-      console.error("Error deleting category image:", error);
+      logger.image.file.corrupted(imagePath || imageName, error);
       return {
         success: false,
         message: "Erro ao deletar imagem",
@@ -848,52 +1112,144 @@ class CategoryService {
   }
 
   /**
-   * Validate and process image file for category
+   * Process image upload with cleanup of previous image and unique naming
    * @param {Object} imageFile - The uploaded image file
-   * @param {string} oldImageName - Name of old image to replace (optional)
-   * @returns {Promise<Object>} - Processing result
+   * @param {string} categoryId - Category ID for unique naming (required)
+   * @param {string} oldImagePath - Path/filename of old image to replace (optional)
+   * @returns {Promise<Object>} - Processing result with rollback support
    */
-  async processImageUpload(imageFile, oldImageName = null) {
+  async processImageUpload(imageFile, categoryId, oldImagePath = null) {
+    const startTime = Date.now();
+    const filename = imageFile?.originalname || 'unknown';
+    const size = imageFile?.size || 0;
+    const mimetype = imageFile?.mimetype || 'unknown';
+
     try {
-      // Upload new image
-      const uploadResult = await this.uploadCategoryImage(imageFile);
-      if (!uploadResult.success) {
-        return uploadResult;
+      // Log processing start
+      logger.image.upload.start(filename, size, mimetype, categoryId);
+
+      // Validate required parameters
+      if (!categoryId) {
+        logger.image.upload.validation.failed(filename, "ID da categoria é obrigatório", categoryId);
+        return {
+          success: false,
+          message: "ID da categoria é obrigatório",
+          errors: { categoryId: "ID da categoria é obrigatório" },
+          code: "MISSING_CATEGORY_ID"
+        };
       }
 
-      // Delete old image if provided
-      if (oldImageName) {
-        await this.deleteCategoryImage(oldImageName);
+      // Validate that category exists
+      const categoryExists = await categoryModel.findById(categoryId);
+      if (!categoryExists) {
+        logger.image.upload.validation.failed(filename, "Categoria não encontrada", categoryId);
+        return {
+          success: false,
+          message: "Categoria não encontrada",
+          errors: { categoryId: "Categoria não existe" },
+          code: "CATEGORY_NOT_FOUND"
+        };
       }
+
+      // If there's an old image, validate it belongs to this category
+      if (oldImagePath && !this.validateCategoryImageAssociation(categoryId, oldImagePath)) {
+        logger.image.maintenance.orphanDetected(oldImagePath, "não pertence à categoria especificada");
+        // Continue processing but don't delete the old image
+        oldImagePath = null;
+      }
+
+      // Log old image cleanup if applicable
+      if (oldImagePath) {
+        logger.image.file.deleted(oldImagePath, 'replacement during processing');
+      }
+
+      // Use enhanced image processor for comprehensive processing with rollback
+      const result = await this.enhancedImageProcessor.processImageUpload(
+        imageFile, 
+        categoryId, 
+        oldImagePath
+      );
+
+      if (!result.success) {
+        logger.image.upload.error(filename, new Error(result.message), categoryId);
+        return {
+          success: false,
+          message: result.message,
+          errors: result.errors || { image: result.message },
+          code: result.code
+        };
+      }
+
+      // Double-check association validation
+      if (!this.validateCategoryImageAssociation(categoryId, result.filename)) {
+        // This should not happen with enhanced processor, but safety check
+        logger.image.upload.validation.failed(filename, "Falha na validação de associação categoria-imagem", categoryId);
+        
+        // Clean up the uploaded file
+        await this.deleteCategoryImage(result.filename);
+        
+        return {
+          success: false,
+          message: "Erro na validação de associação da imagem",
+          errors: { image: "Falha na validação de associação categoria-imagem" },
+          code: "ASSOCIATION_VALIDATION_FAILED"
+        };
+      }
+
+      // Log successful processing
+      const duration = Date.now() - startTime;
+      logger.image.upload.success(filename, result.path, duration, categoryId);
+      logger.image.file.created(result.path, result.size);
+
+      // Log validation success
+      logger.image.upload.validation.passed(filename, ["category-exists", "association", "processing"], categoryId);
+
+      // Check for slow processing performance
+      logger.image.performance.slowUpload(filename, duration);
+
+      // Record performance metrics
+      imageLogger.performanceCollector.record('category_image_processing', duration);
 
       return {
         success: true,
         message: "Imagem processada com sucesso",
-        filename: uploadResult.filename,
-        url: uploadResult.path
+        filename: result.filename,
+        path: result.path,
+        url: result.path, // For backward compatibility
+        size: result.size,
+        optimization: result.optimization
       };
     } catch (error) {
-      console.error("Error processing image upload:", error);
+      const duration = Date.now() - startTime;
+      logger.image.upload.error(filename, error, categoryId);
+      
+      // Record failed operation metrics
+      imageLogger.performanceCollector.record('category_image_processing_failed', duration);
+
       return {
         success: false,
-        message: "Erro ao processar upload da imagem",
-        error: error.message
+        message: "Erro interno ao processar upload da imagem",
+        error: error.message,
+        code: "PROCESSING_ERROR"
       };
     }
   }
 
   /**
-   * Get category image info
+   * Get category image info with association validation
    * @param {string} imageName - Name of the image file
-   * @returns {Object} - Image information
+   * @param {string} categoryId - Category ID to validate association (optional)
+   * @returns {Object} - Image information with validation
    */
-  getCategoryImageInfo(imageName) {
+  getCategoryImageInfo(imageName, categoryId = null) {
     if (!imageName) {
       return {
         exists: false,
         path: null,
         url: null,
-        size: null
+        size: null,
+        isAssociated: false,
+        categoryId: null
       };
     }
 
@@ -910,12 +1266,93 @@ class CategoryService {
       }
     }
 
+    // Extract category ID from filename if it follows unique naming pattern
+    let extractedCategoryId = null;
+    let isAssociated = false;
+    
+    if (imageName.startsWith('cat_')) {
+      const parts = imageName.split('_');
+      if (parts.length >= 4) {
+        extractedCategoryId = parts[1];
+        
+        // If categoryId provided, validate association
+        if (categoryId) {
+          isAssociated = this.validateCategoryImageAssociation(categoryId, imageName);
+        }
+      }
+    }
+
     return {
       exists,
       path: exists ? imagePath : null,
       url: exists ? this.generateCategoryImageUrl(imageName) : null,
-      size
+      size,
+      isAssociated,
+      categoryId: extractedCategoryId,
+      isUniqueNaming: extractedCategoryId !== null
     };
+  }
+
+  /**
+   * Validate image uniqueness across all categories
+   * @param {string} imagePath - Image path or filename
+   * @returns {Promise<Object>} - Validation result with category information
+   */
+  async validateImageUniqueness(imagePath) {
+    try {
+      const filename = path.basename(imagePath);
+      const imageInfo = this.getCategoryImageInfo(filename);
+      
+      if (!imageInfo.exists) {
+        return {
+          isValid: true,
+          isUnique: true,
+          message: "Imagem não existe no sistema"
+        };
+      }
+
+      if (!imageInfo.isUniqueNaming) {
+        return {
+          isValid: false,
+          isUnique: false,
+          message: "Imagem não segue padrão de nomenclatura única",
+          filename
+        };
+      }
+
+      // Check if the category referenced in filename actually exists
+      const categoryExists = await categoryModel.findById(imageInfo.categoryId);
+      if (!categoryExists) {
+        return {
+          isValid: false,
+          isUnique: false,
+          message: "Imagem referencia categoria inexistente",
+          filename,
+          referencedCategoryId: imageInfo.categoryId
+        };
+      }
+
+      // Check if category's image field matches this image
+      const categoryImageFilename = categoryExists.image ? path.basename(categoryExists.image) : null;
+      const isCurrentCategoryImage = categoryImageFilename === filename;
+
+      return {
+        isValid: true,
+        isUnique: true,
+        isCurrentCategoryImage,
+        categoryId: imageInfo.categoryId,
+        categoryName: categoryExists.name,
+        filename
+      };
+    } catch (error) {
+      console.error("Error validating image uniqueness:", error);
+      return {
+        isValid: false,
+        isUnique: false,
+        message: "Erro ao validar unicidade da imagem",
+        error: error.message
+      };
+    }
   }
 
   /**
@@ -926,6 +1363,164 @@ class CategoryService {
    */
   async validateCategoryData(data, isUpdate = false) {
     return validateCategoryData(data, isUpdate);
+  }
+
+  /**
+   * Validate category for unique image compliance
+   * @param {string} categoryId - Category ID
+   * @returns {Promise<Object>} - Validation result with compliance details
+   */
+  async validateCategoryUniqueImageCompliance(categoryId) {
+    try {
+      if (!categoryId) {
+        return {
+          isCompliant: false,
+          message: "ID da categoria é obrigatório"
+        };
+      }
+
+      // Get category from database
+      const category = await categoryModel.findById(categoryId);
+      if (!category) {
+        return {
+          isCompliant: false,
+          message: "Categoria não encontrada"
+        };
+      }
+
+      const issues = [];
+      const warnings = [];
+
+      // Check if category has an image
+      if (!category.image) {
+        issues.push("Categoria não possui imagem associada");
+      } else {
+        // Validate image path format
+        if (!category.image.startsWith('/uploads/categories/')) {
+          issues.push("Caminho da imagem não segue padrão esperado");
+        }
+
+        // Extract filename and validate association
+        const filename = path.basename(category.image);
+        
+        if (!this.validateCategoryImageAssociation(categoryId, filename)) {
+          issues.push("Nome da imagem não segue padrão de nomenclatura única");
+        }
+
+        // Check if image file actually exists
+        const imageInfo = this.getCategoryImageInfo(filename, categoryId);
+        if (!imageInfo.exists) {
+          issues.push("Arquivo de imagem não existe no sistema de arquivos");
+        } else if (!imageInfo.isAssociated) {
+          issues.push("Imagem não está corretamente associada à categoria");
+        }
+
+        // Check for orphaned images (images that belong to this category but aren't referenced)
+        const associatedImages = await this.getCategoryAssociatedImages(categoryId);
+        if (associatedImages.length > 1) {
+          warnings.push(`Encontradas ${associatedImages.length} imagens associadas à categoria (esperado: 1)`);
+        } else if (associatedImages.length === 0) {
+          issues.push("Nenhuma imagem encontrada no sistema de arquivos para esta categoria");
+        }
+      }
+
+      const isCompliant = issues.length === 0;
+
+      return {
+        isCompliant,
+        categoryId,
+        categoryName: category.name,
+        imagePath: category.image,
+        issues: issues.length > 0 ? issues : null,
+        warnings: warnings.length > 0 ? warnings : null,
+        message: isCompliant 
+          ? "Categoria está em conformidade com padrão de imagens únicas"
+          : `Categoria possui ${issues.length} problema(s) de conformidade`
+      };
+    } catch (error) {
+      console.error("Error validating category unique image compliance:", error);
+      return {
+        isCompliant: false,
+        message: "Erro ao validar conformidade da categoria",
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Fix category unique image compliance issues
+   * @param {string} categoryId - Category ID
+   * @param {Object} options - Fix options
+   * @returns {Promise<Object>} - Fix result
+   */
+  async fixCategoryUniqueImageCompliance(categoryId, options = {}) {
+    try {
+      const validation = await this.validateCategoryUniqueImageCompliance(categoryId);
+      
+      if (validation.isCompliant) {
+        return {
+          success: true,
+          message: "Categoria já está em conformidade",
+          fixed: false
+        };
+      }
+
+      const fixes = [];
+      const errors = [];
+
+      // Get category
+      const category = await categoryModel.findById(categoryId);
+      if (!category) {
+        return {
+          success: false,
+          message: "Categoria não encontrada"
+        };
+      }
+
+      // Clean up orphaned images if requested
+      if (options.cleanupOrphaned) {
+        const associatedImages = await this.getCategoryAssociatedImages(categoryId);
+        const currentImageFilename = category.image ? path.basename(category.image) : null;
+        
+        for (const imageName of associatedImages) {
+          if (imageName !== currentImageFilename) {
+            try {
+              await this.deleteCategoryImage(imageName);
+              fixes.push(`Removida imagem órfã: ${imageName}`);
+            } catch (error) {
+              errors.push(`Falha ao remover imagem órfã ${imageName}: ${error.message}`);
+            }
+          }
+        }
+      }
+
+      // Update image path format if needed
+      if (category.image && !category.image.startsWith('/uploads/categories/')) {
+        const filename = path.basename(category.image);
+        const newPath = `/uploads/categories/${filename}`;
+        
+        await categoryModel.findByIdAndUpdate(categoryId, { image: newPath });
+        fixes.push(`Corrigido caminho da imagem: ${category.image} → ${newPath}`);
+        
+        // Clear cache
+        this.clearCache();
+      }
+
+      return {
+        success: true,
+        message: `Correção concluída: ${fixes.length} correções aplicadas`,
+        fixed: fixes.length > 0,
+        fixes: fixes.length > 0 ? fixes : null,
+        errors: errors.length > 0 ? errors : null
+      };
+    } catch (error) {
+      console.error("Error fixing category unique image compliance:", error);
+      return {
+        success: false,
+        message: "Erro ao corrigir conformidade da categoria",
+        error: error.message
+      };
+    }
   }
 
   /**
@@ -1141,6 +1736,95 @@ class CategoryService {
       return {
         isValid: false,
         errors: { system: 'Erro interno na validação do slug' }
+      };
+    }
+  }
+
+  /**
+   * Perform integrity check on category images
+   * @returns {Promise<Object>} - Integrity check results
+   */
+  async performImageIntegrityCheck() {
+    try {
+      const report = await this.imageIntegrity.performIntegrityCheck();
+      return {
+        success: true,
+        data: report
+      };
+    } catch (error) {
+      console.error("Error performing image integrity check:", error);
+      return {
+        success: false,
+        message: "Erro ao verificar integridade das imagens",
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Clean up orphaned category images
+   * @param {boolean} createBackup - Whether to create backup before cleanup
+   * @returns {Promise<Object>} - Cleanup results
+   */
+  async cleanupOrphanedImages(createBackup = true) {
+    try {
+      const result = await this.imageIntegrity.cleanupOrphanedImages(createBackup);
+      return {
+        success: result.success,
+        message: result.success ? 
+          `Limpeza concluída: ${result.cleaned} imagens órfãs removidas` : 
+          result.error,
+        data: result
+      };
+    } catch (error) {
+      console.error("Error cleaning up orphaned images:", error);
+      return {
+        success: false,
+        message: "Erro ao limpar imagens órfãs",
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Generate comprehensive integrity report
+   * @returns {Promise<Object>} - Integrity report
+   */
+  async generateIntegrityReport() {
+    try {
+      const report = await this.imageIntegrity.generateIntegrityReport();
+      return {
+        success: true,
+        data: report
+      };
+    } catch (error) {
+      console.error("Error generating integrity report:", error);
+      return {
+        success: false,
+        message: "Erro ao gerar relatório de integridade",
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Get storage statistics for category images
+   * @returns {Promise<Object>} - Storage statistics
+   */
+  async getStorageStatistics() {
+    try {
+      const stats = await this.imageIntegrity.getStorageStatistics();
+      return {
+        success: stats.success,
+        data: stats.success ? stats.statistics : null,
+        message: stats.success ? "Estatísticas obtidas com sucesso" : stats.error
+      };
+    } catch (error) {
+      console.error("Error getting storage statistics:", error);
+      return {
+        success: false,
+        message: "Erro ao obter estatísticas de armazenamento",
+        error: error.message
       };
     }
   }

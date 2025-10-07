@@ -1,14 +1,32 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import "./ExploreMenu.css";
 import { TRANSLATIONS } from "../../constants/translations";
 import { getCategoryEnglish } from "../../constants/categories";
 import { useCategories } from "../../hooks/useCategories";
 import SafeImage from "../SafeImage/SafeImage";
 import { StoreContext } from "../../context/StoreContext";
+import { 
+  preloadCriticalCategoryImages, 
+  getConnectionOptimizedConfig,
+  categoryImageCache 
+} from "../../utils/categoryImagePreloader";
 
 const ExploreMenu = ({category, setCategory}) => {
   const { categories, loading, error, useFallback, retryFetch } = useCategories();
   const { url } = useContext(StoreContext);
+
+  // Get connection-optimized configuration
+  const connectionConfig = getConnectionOptimizedConfig();
+
+  // Preload critical category images when categories are loaded
+  useEffect(() => {
+    if (categories && categories.length > 0 && url) {
+      preloadCriticalCategoryImages(categories, url, connectionConfig.preloadCount);
+      
+      // Cleanup expired cache entries
+      categoryImageCache.cleanup();
+    }
+  }, [categories, url, connectionConfig.preloadCount]);
 
   // Loading state
   if (loading) {
@@ -78,26 +96,40 @@ const ExploreMenu = ({category, setCategory}) => {
                 baseUrl={url}
                 fallback="/placeholder-category.svg"
                 alt={item.menu_name}
-                lazy={true}
-                rootMargin="150px"
-                onError={(e) => {
+                categoryId={item._id}
+                lazy={connectionConfig.lazy}
+                rootMargin={connectionConfig.rootMargin}
+                priority={index < 3 ? "high" : "normal"} // First 3 categories get high priority
+                onError={(e, details) => {
                   console.error(`❌ Failed to load category image:`, {
                     category: item.menu_name,
+                    categoryId: item._id,
                     imageSrc: item.menu_image,
                     baseUrl: url,
                     fullUrl: item.menu_image && item.menu_image.startsWith('http') 
                       ? item.menu_image 
                       : item.menu_image ? `${url}${item.menu_image}` : 'No image',
-                    error: e
+                    error: e,
+                    connectionType: connectionConfig.quality,
+                    ...details
                   });
                 }}
                 onLoad={() => {
+                  // Cache successful load
+                  categoryImageCache.set(item._id, {
+                    imagePath: item.menu_image,
+                    loadTime: Date.now(),
+                    category: item.menu_name
+                  });
+                  
                   console.log(`✅ Successfully loaded category image:`, {
                     category: item.menu_name,
+                    categoryId: item._id,
                     imageSrc: item.menu_image,
                     fullUrl: item.menu_image && item.menu_image.startsWith('http') 
                       ? item.menu_image 
-                      : item.menu_image ? `${url}${item.menu_image}` : 'No image'
+                      : item.menu_image ? `${url}${item.menu_image}` : 'No image',
+                    connectionType: connectionConfig.quality
                   });
                 }}
               />
