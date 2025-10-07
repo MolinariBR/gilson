@@ -367,30 +367,35 @@ class ImageMonitoring {
    * @returns {Promise<Object>} - Disk usage stats
    */
   async getDiskUsage(dirPath) {
-    return new Promise((resolve, reject) => {
-      const { exec } = require('child_process');
-      
-      exec(`df -k "${dirPath}"`, (error, stdout, stderr) => {
-        if (error) {
-          reject(error);
-          return;
-        }
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Use dynamic import for child_process in ES modules
+        const { exec } = await import('child_process');
         
-        const lines = stdout.trim().split('\n');
-        const data = lines[1].split(/\s+/);
-        
-        const total = parseInt(data[1]) * 1024; // Convert from KB to bytes
-        const used = parseInt(data[2]) * 1024;
-        const available = parseInt(data[3]) * 1024;
-        const usagePercentage = used / total;
-        
-        resolve({
-          total,
-          used,
-          available,
-          usagePercentage
+        exec(`df -k "${dirPath}"`, (error, stdout, stderr) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          
+          const lines = stdout.trim().split('\n');
+          const data = lines[1].split(/\s+/);
+          
+          const total = parseInt(data[1]) * 1024; // Convert from KB to bytes
+          const used = parseInt(data[2]) * 1024;
+          const available = parseInt(data[3]) * 1024;
+          const usagePercentage = used / total;
+          
+          resolve({
+            total,
+            used,
+            available,
+            usagePercentage
+          });
         });
-      });
+      } catch (importError) {
+        reject(importError);
+      }
     });
   }
 
