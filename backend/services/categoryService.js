@@ -1,4 +1,4 @@
-import categoryModel from "../models/categoryModelSimple.js";
+import categoryModel from "../models/categoryModel.js";
 import foodModel from "../models/foodModel.js";
 import { 
   validateCategoryData, 
