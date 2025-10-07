@@ -11,22 +11,24 @@ export const connectDB = async () => {
     
     // Configure mongoose settings BEFORE connecting
     mongoose.set('strictQuery', false);
-    mongoose.set('bufferCommands', false);
-    mongoose.set('bufferMaxEntries', 0);
     
-    // Simplified options to avoid parsing errors
+    // Basic connection options - keep it simple
     const options = {
       serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
-      connectTimeoutMS: 30000,
-      maxPoolSize: 10,
-      minPoolSize: 2,
-      maxIdleTimeMS: 30000,
-      heartbeatFrequencyMS: 10000
+      connectTimeoutMS: 30000
     };
     
-    logger.database.info("Conectando com opções simplificadas...");
-    await mongoose.connect(mongoUrl, options);
+    logger.database.info("Conectando com opções básicas...");
+    
+    // Connect and wait for it to complete
+    const connection = await mongoose.connect(mongoUrl, options);
+    
+    logger.database.info("✅ Conexão inicial estabelecida");
+    
+    // Wait for the connection to be ready
+    await mongoose.connection.db.admin().ping();
+    logger.database.info("✅ Ping ao MongoDB bem-sucedido");
     
     // Handle connection events
     mongoose.connection.on('connected', () => {
@@ -48,7 +50,8 @@ export const connectDB = async () => {
       process.exit(0);
     });
     
-    logger.database.info("✅ MongoDB conectado com configurações otimizadas");
+    logger.database.info("✅ MongoDB conectado e pronto para uso");
+    return connection;
   } catch (error) {
     logger.database.error("Falha na conexão com MongoDB:", error);
     
