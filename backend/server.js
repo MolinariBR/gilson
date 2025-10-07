@@ -14,6 +14,7 @@ import categoryRouter from "./routes/categoryRoute.js";
 import { logger, errorHandler } from "./utils/logger.js";
 import testRouter from "./routes/testRoute.js";
 import debugRouter from "./routes/debugRoute.js";
+import imageInconsistencyRouter from "./routes/imageInconsistencyRoutes.js";
 import { createAssetHandler, assetErrorHandler, mimeTypeFixer } from "./middleware/assetHandler.js";
 
 
@@ -427,14 +428,42 @@ app.use("/uploads", express.static("uploads", {
   lastModified: true,
   setHeaders: (res, filePath) => {
     const ext = path.extname(filePath).toLowerCase();
+    const filename = path.basename(filePath);
     
     // Set proper MIME types and caching headers for images
     if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
-      // Cache images for 1 year with revalidation
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      res.setHeader('Vary', 'Accept-Encoding');
+      // Check if this is a category image with unique naming
+      const isCategoryImage = filePath.includes('/categories/') || filename.startsWith('cat_');
       
-      // Set proper MIME types
+      if (isCategoryImage) {
+        // Optimized cache headers for unique category images
+        res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30 days
+        res.setHeader('Vary', 'Accept-Encoding');
+        
+        // Enhanced ETag for category images
+        try {
+          const stats = require('fs').statSync(filePath);
+          const categoryId = filename.match(/cat_([a-f0-9]{24})_/)?.[1] || 'unknown';
+          res.setHeader('ETag', `"cat-${categoryId}-${stats.mtime.getTime()}"`);
+        } catch (err) {
+          // Fallback ETag if file stats fail
+          res.setHeader('ETag', `"cat-${Date.now()}"`);
+        }
+        
+        // Category-specific headers
+        res.setHeader('X-Image-Type', 'category');
+        res.setHeader('X-Category-Cache', 'optimized');
+        
+        logger.assets.info(`Serving optimized category image: ${filename} (${ext})`);
+      } else {
+        // Standard cache for other images
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+        res.setHeader('Vary', 'Accept-Encoding');
+        
+        logger.assets.info(`Serving optimized image: ${filename} (${ext})`);
+      }
+      
+      // Set proper MIME types for all images
       const mimeTypes = {
         '.jpg': 'image/jpeg',
         '.jpeg': 'image/jpeg',
@@ -448,11 +477,8 @@ app.use("/uploads", express.static("uploads", {
         res.setHeader('Content-Type', mimeTypes[ext]);
       }
       
-      // Add compression hint
+      // Common security headers for all images
       res.setHeader('X-Content-Type-Options', 'nosniff');
-      
-      // Log image serving for performance monitoring
-      logger.assets.info(`Serving optimized image: ${path.basename(filePath)} (${ext})`);
     }
   }
 }));
@@ -462,6 +488,7 @@ app.use("/api/order", orderRouter);
 app.use("/api/zone", zoneRouter);
 app.use("/api", categoryRouter);
 app.use("/api/debug", debugRouter);
+app.use("/api/admin/image-health", imageInconsistencyRouter);
 
 // Rotas de teste para debug
 app.use("/test", testRouter);
