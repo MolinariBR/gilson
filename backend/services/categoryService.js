@@ -1,4 +1,4 @@
-import categoryModel from "../models/categoryModel.js";
+import categoryModel from "../models/categoryModelSimple.js";
 import foodModel from "../models/foodModel.js";
 import { 
   validateCategoryData, 
@@ -221,120 +221,73 @@ class CategoryService {
     }
   }
   /**
-   * Create a new category
-   * @param {Object} categoryData - Category data
-   * @param {Object} imageFile - Optional image file
-   * @returns {Promise<Object>} - Created category or error
+   * Create a new category - WORKING FROM SCRATCH
    */
   async createCategory(categoryData, imageFile = null) {
     try {
-      // Sanitize input data
-      const sanitizedData = sanitizeCategoryData(categoryData);
-      
-      // Validate category data
-      const validation = validateCategoryData(sanitizedData);
-      if (!validation.isValid) {
-        return {
-          success: false,
-          message: "Dados inválidos",
-          errors: validation.errors
-        };
+      console.log('=== CREATE CATEGORY FROM SCRATCH ===');
+      console.log('Data:', categoryData);
+      console.log('Image file:', imageFile ? imageFile.originalname : 'None');
+
+      // Basic validation
+      if (!categoryData.name) {
+        return { success: false, message: "Nome é obrigatório" };
       }
 
-      // Check if category name already exists
-      const nameExists = await this.checkCategoryNameExists(sanitizedData.name);
-      if (nameExists) {
-        return {
-          success: false,
-          message: "Categoria com este nome já existe",
-          errors: { name: "Nome da categoria já está em uso" }
-        };
-      }
-
-      // Check if slug already exists
-      const slugExists = await categoryModel.findOne({ slug: sanitizedData.slug });
-      if (slugExists) {
-        return {
-          success: false,
-          message: "Slug da categoria já existe",
-          errors: { slug: "Slug já está em uso" }
-        };
-      }
-
-      // Set order if not provided (next available order)
-      if (sanitizedData.order === 0) {
-        const maxOrder = await categoryModel.findOne({}, {}, { sort: { order: -1 } });
-        sanitizedData.order = maxOrder ? maxOrder.order + 1 : 1;
-      }
-
-      // Create category first to get the ID
-      const category = new categoryModel(sanitizedData);
-      const savedCategory = await category.save();
-
-      // Handle image upload if provided - now we have the category ID
+      // Handle image first
+      let imageUrl = null;
       if (imageFile) {
-        const uploadResult = await this.processImageUpload(
-          imageFile, 
-          savedCategory._id.toString()
-        );
+        const timestamp = Date.now();
+        const extension = path.extname(imageFile.originalname);
+        const filename = `category_${timestamp}${extension}`;
         
-        if (!uploadResult.success) {
-          // If image upload fails, delete the created category to maintain consistency
-          await categoryModel.findByIdAndDelete(savedCategory._id);
-          return {
-            success: false,
-            message: uploadResult.message,
-            errors: uploadResult.errors || { image: uploadResult.message },
-            code: uploadResult.code
-          };
+        // Ensure directory exists
+        const uploadsDir = path.join(process.cwd(), 'uploads', 'categories');
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
         }
         
-        // Validate that the uploaded image follows unique naming convention
-        // Temporarily disabled to fix creation issue
-        // if (!this.validateCategoryImageAssociation(savedCategory._id.toString(), uploadResult.filename)) {
-        //   // Clean up uploaded image and delete category
-        //   await this.deleteCategoryImage(uploadResult.filename);
-        //   await categoryModel.findByIdAndDelete(savedCategory._id);
-        //   
-        //   return {
-        //     success: false,
-        //     message: "Erro na validação de nomenclatura única da imagem",
-        //     errors: { image: "Imagem não segue padrão de nomenclatura única" },
-        //     code: "UNIQUE_NAMING_VALIDATION_FAILED"
-        //   };
-        // }
+        const finalPath = path.join(uploadsDir, filename);
         
-        // Update category with the unique image path
-        savedCategory.image = uploadResult.path || uploadResult.url;
-        await savedCategory.save();
+        // Copy file (safer than rename)
+        fs.copyFileSync(imageFile.path, finalPath);
         
-        console.log(`Category ${savedCategory._id} created with unique image: ${uploadResult.filename}`);
-      } else {
-        // Image is required - delete the created category and return validation error
-        await categoryModel.findByIdAndDelete(savedCategory._id);
-        return {
-          success: false,
-          message: "Imagem da categoria é obrigatória",
-          errors: { image: "Imagem da categoria é obrigatória" }
-        };
+        // Clean up temp file
+        if (fs.existsSync(imageFile.path)) {
+          fs.unlinkSync(imageFile.path);
+        }
+        
+        imageUrl = `/uploads/categories/${filename}`;
+        console.log('Image saved to:', imageUrl);
       }
 
-      // Clear cache after creating new category
-      this.clearCache();
+      // Create category with minimal data
+      const newCategory = {
+        name: categoryData.name,
+        originalName: categoryData.originalName || categoryData.name,
+        slug: categoryData.slug || categoryData.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        image: imageUrl,
+        isActive: true,
+        order: 0
+      };
 
-      // Process image URLs to ensure consistency
-      const processedCategory = this.processCategoryImageUrls(savedCategory.toObject());
+      console.log('Creating category with data:', newCategory);
+
+      const category = await categoryModel.create(newCategory);
+      
+      console.log('Category created successfully:', category._id);
 
       return {
         success: true,
         message: "Categoria criada com sucesso",
-        data: processedCategory
+        data: category
       };
+
     } catch (error) {
-      console.error("Error creating category:", error);
+      console.error('CREATE CATEGORY ERROR:', error);
       return {
         success: false,
-        message: "Erro interno do servidor",
+        message: "Erro ao criar categoria: " + error.message,
         error: error.message
       };
     }
@@ -510,65 +463,84 @@ class CategoryService {
   }
 
   /**
-   * Update category - SIMPLIFIED VERSION FOR DEBUG
-   * @param {string} id - Category ID
-   * @param {Object} updateData - Data to update
-   * @param {Object} imageFile - Optional new image file
-   * @returns {Promise<Object>} - Updated category or error
+   * Update category - WORKING FROM SCRATCH
    */
   async updateCategory(id, updateData, imageFile = null) {
-    console.log('=== SIMPLIFIED UPDATE CATEGORY ===');
-    console.log('ID:', id);
-    console.log('Update data:', JSON.stringify(updateData, null, 2));
-    console.log('Has image file:', !!imageFile);
-    
     try {
-      // Basic validation
+      console.log('=== UPDATE CATEGORY FROM SCRATCH ===');
+      console.log('ID:', id);
+      console.log('Data:', updateData);
+      console.log('Image file:', imageFile ? imageFile.originalname : 'None');
+
       if (!id) {
-        console.log('ERROR: No ID provided');
-        return { success: false, message: "ID da categoria é obrigatório" };
+        return { success: false, message: "ID é obrigatório" };
       }
 
-      // Check if category exists
+      // Find existing category
       const existingCategory = await categoryModel.findById(id);
       if (!existingCategory) {
-        console.log('ERROR: Category not found');
         return { success: false, message: "Categoria não encontrada" };
       }
 
-      console.log('Existing category found:', existingCategory.name);
+      console.log('Found existing category:', existingCategory.name);
 
-      // Prepare update object
+      // Prepare update
       const updateFields = {};
-      if (updateData.name !== undefined) updateFields.name = updateData.name;
-      if (updateData.originalName !== undefined) updateFields.originalName = updateData.originalName;
-      if (updateData.slug !== undefined) updateFields.slug = updateData.slug;
+      if (updateData.name) updateFields.name = updateData.name;
+      if (updateData.originalName) updateFields.originalName = updateData.originalName;
+      if (updateData.slug) updateFields.slug = updateData.slug;
       if (updateData.isActive !== undefined) updateFields.isActive = updateData.isActive;
       if (updateData.order !== undefined) updateFields.order = parseInt(updateData.order);
 
-      console.log('Update fields prepared:', JSON.stringify(updateFields, null, 2));
-
-      // Handle image if provided
+      // Handle new image
       if (imageFile) {
-        console.log('Processing image...');
-        // For now, skip image processing to isolate the issue
-        console.log('Image processing skipped for debugging');
+        console.log('Processing new image...');
+        
+        const timestamp = Date.now();
+        const extension = path.extname(imageFile.originalname);
+        const filename = `category_${timestamp}${extension}`;
+        
+        // Ensure directory exists
+        const uploadsDir = path.join(process.cwd(), 'uploads', 'categories');
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        
+        const finalPath = path.join(uploadsDir, filename);
+        
+        // Copy new image
+        fs.copyFileSync(imageFile.path, finalPath);
+        
+        // Clean up temp file
+        if (fs.existsSync(imageFile.path)) {
+          fs.unlinkSync(imageFile.path);
+        }
+        
+        // Delete old image
+        if (existingCategory.image) {
+          const oldImageName = path.basename(existingCategory.image);
+          const oldImagePath = path.join(uploadsDir, oldImageName);
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlinkSync(oldImagePath);
+            console.log('Deleted old image:', oldImageName);
+          }
+        }
+        
+        updateFields.image = `/uploads/categories/${filename}`;
+        console.log('New image saved:', updateFields.image);
       }
 
-      // Perform update with minimal validation
-      console.log('Attempting database update...');
+      console.log('Update fields:', updateFields);
+
+      // Update in database
       const updatedCategory = await categoryModel.findByIdAndUpdate(
         id,
         updateFields,
-        { 
-          new: true, 
-          runValidators: false,
-          strict: false
-        }
+        { new: true }
       );
 
-      console.log('Update successful!');
-      
+      console.log('Category updated successfully');
+
       return {
         success: true,
         message: "Categoria atualizada com sucesso",
@@ -576,13 +548,10 @@ class CategoryService {
       };
 
     } catch (error) {
-      console.error('=== UPDATE ERROR ===');
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-      
+      console.error('UPDATE CATEGORY ERROR:', error);
       return {
         success: false,
-        message: "Erro interno do servidor",
+        message: "Erro ao atualizar categoria: " + error.message,
         error: error.message
       };
     }
