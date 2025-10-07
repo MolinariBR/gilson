@@ -14,6 +14,7 @@ import categoryRouter from "./routes/categoryRoute.js";
 import { logger, errorHandler } from "./utils/logger.js";
 import testRouter from "./routes/testRoute.js";
 import debugRouter from "./routes/debugRoute.js";
+import { createAssetHandler, assetErrorHandler, mimeTypeFixer } from "./middleware/assetHandler.js";
 
 
 // Get __dirname equivalent for ES modules
@@ -91,7 +92,34 @@ const app = express();
 const port = process.env.PORT || 4000;
 
 //middlewares
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Configure timeouts
+app.use((req, res, next) => {
+  // Set timeout for all requests (30 seconds)
+  req.setTimeout(30000, () => {
+    logger.system.error(`Request timeout for ${req.method} ${req.url}`);
+    if (!res.headersSent) {
+      res.status(408).json({ 
+        success: false, 
+        message: 'Request timeout' 
+      });
+    }
+  });
+  
+  res.setTimeout(30000, () => {
+    logger.system.error(`Response timeout for ${req.method} ${req.url}`);
+    if (!res.headersSent) {
+      res.status(408).json({ 
+        success: false, 
+        message: 'Response timeout' 
+      });
+    }
+  });
+  
+  next();
+});
 
 // CORS configuration for single domain deployment
 const corsOptions = {
@@ -150,76 +178,87 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Middleware global para debug e desabilitar Cloudflare
+// Apply MIME type fixer globally
+app.use(mimeTypeFixer);
+
+// Middleware global para logging e headers
 app.use((req, res, next) => {
   const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || 'unknown';
   
   // Log detalhado para assets
   if (req.url.includes('/assets/')) {
     logger.assets.info(`🔍 REQUISIÇÃO ASSET: ${req.method} ${req.url}`);
-    logger.assets.info(`🔍 Headers: ${JSON.stringify(req.headers.accept)}`);
-    logger.assets.info(`🔍 User-Agent: ${req.headers['user-agent']}`);
   }
   
   logger.api.request(req.method, req.url, clientIP);
   
-  // Headers anti-Cloudflare para TODAS as respostas
-  res.setHeader('CF-Cache-Status', 'BYPASS');
-  res.setHeader('CF-Rocket-Loader', 'off');
-  res.setHeader('CF-Mirage', 'off');
-  res.setHeader('CF-Polish', 'off');
-  res.setHeader('CF-ScrapeShield', 'off');
-  res.setHeader('Server', 'Express-Custom');
+  // Headers básicos de segurança
+  res.setHeader('X-Powered-By', 'Express');
   res.setHeader('X-Debug-Timestamp', Date.now().toString());
   
-  next();
-});
-
-// CRITICAL: Servir assets estáticos com Express.static
-app.use('/assets', express.static(path.join(__dirname, '../frontend/dist/assets'), {
-  setHeaders: (res, filePath) => {
-    logger.assets.info(`Servindo asset estático: ${path.basename(filePath)}`);
-    
-    // Definir MIME types corretos
-    if (filePath.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css; charset=utf-8');
-    } else if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    } else if (filePath.endsWith('.png')) {
-      res.setHeader('Content-Type', 'image/png');
-    } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/jpeg');
-    }
-    
-    // Headers anti-cache e anti-Cloudflare
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Headers anti-Cloudflare apenas se necessário
+  if (process.env.DISABLE_CLOUDFLARE === 'true') {
     res.setHeader('CF-Cache-Status', 'BYPASS');
     res.setHeader('CF-Rocket-Loader', 'off');
     res.setHeader('CF-Mirage', 'off');
     res.setHeader('CF-Polish', 'off');
   }
-}));
+  
+  next();
+});
 
-// Fallback para assets do admin
-app.use('/assets', express.static(path.join(__dirname, '../admin/dist/assets'), {
-  setHeaders: (res, filePath) => {
-    logger.assets.info(`Servindo asset do admin: ${path.basename(filePath)}`);
+// Middleware para detectar e tratar problemas de conectividade
+app.use((req, res, next) => {
+  // Detectar se é uma requisição problemática
+  const isAssetRequest = req.url.includes('/assets/') || req.url.includes('.css') || req.url.includes('.js');
+  const isApiRequest = req.url.startsWith('/api/');
+  
+  if (isAssetRequest || isApiRequest) {
+    // Adicionar headers para melhorar conectividade
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Keep-Alive', 'timeout=30, max=100');
     
-    if (filePath.endsWith('.css')) {
-      res.setHeader('Content-Type', 'text/css; charset=utf-8');
-    } else if (filePath.endsWith('.js')) {
-      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    // Para assets, garantir MIME type correto
+    if (isAssetRequest) {
+      const ext = path.extname(req.url).toLowerCase();
+      if (ext === '.css') {
+        res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      } else if (ext === '.js') {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      }
     }
-    
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('CF-Cache-Status', 'BYPASS');
-    res.setHeader('CF-Rocket-Loader', 'off');
   }
-}));
+  
+  next();
+});
+
+// CRITICAL: Servir assets estáticos com handler otimizado
+app.use('/assets', 
+  createAssetHandler('../frontend/dist/assets', {
+    maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+    enableCaching: process.env.NODE_ENV === 'production',
+    logRequests: true
+  }),
+  express.static(path.join(__dirname, '../frontend/dist/assets'), {
+    maxAge: process.env.NODE_ENV === 'production' ? 86400000 : 0, // 1 day in ms
+    etag: true,
+    lastModified: true
+  })
+);
+
+// Assets do admin com handler otimizado
+app.use('/admin/assets',
+  createAssetHandler('../admin/dist/assets', {
+    maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+    enableCaching: process.env.NODE_ENV === 'production',
+    logRequests: true
+  }),
+  express.static(path.join(__dirname, '../admin/dist/assets'), {
+    maxAge: process.env.NODE_ENV === 'production' ? 86400000 : 0,
+    etag: true,
+    lastModified: true
+  })
+);
 
 // Rota de teste para verificar headers anti-Cloudflare
 app.get('/test-headers', (req, res) => {
@@ -424,6 +463,43 @@ app.get("*", (req, res) => {
     disableCloudflareOptimizations(res);
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   }
+});
+
+// Asset error handler (deve vir antes dos outros)
+app.use(assetErrorHandler);
+
+// Middleware específico para tratar erros de conectividade
+app.use((err, req, res, next) => {
+  // Log do erro
+  logger.system.error(`Erro na requisição ${req.method} ${req.url}:`, err);
+  
+  // Tratar diferentes tipos de erro
+  if (err.code === 'TIMEOUT' || err.message.includes('timeout')) {
+    return res.status(408).json({
+      success: false,
+      message: 'Request timeout - please try again',
+      error: 'TIMEOUT'
+    });
+  }
+  
+  if (err.code === 'ECONNRESET' || err.code === 'ECONNABORTED') {
+    return res.status(503).json({
+      success: false,
+      message: 'Connection error - please try again',
+      error: 'CONNECTION_ERROR'
+    });
+  }
+  
+  if (err.message && err.message.includes('CORS')) {
+    return res.status(403).json({
+      success: false,
+      message: 'CORS error',
+      error: 'CORS_ERROR'
+    });
+  }
+  
+  // Passar para o próximo handler de erro
+  next(err);
 });
 
 // Middleware de tratamento de erros (deve ser o último)

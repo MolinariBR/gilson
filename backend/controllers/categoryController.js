@@ -46,22 +46,39 @@ const createCategory = async (req, res) => {
 // Get all categories (Admin only - includes inactive)
 const getAllCategories = async (req, res) => {
   try {
+    // Set timeout for this operation
+    const timeoutId = setTimeout(() => {
+      if (!res.headersSent) {
+        res.status(408).json({
+          success: false,
+          message: "Request timeout - categories taking too long to load"
+        });
+      }
+    }, 25000); // 25 seconds timeout
+    
     // Admin authentication is handled by middleware
     const includeInactive = req.query.includeInactive === 'true';
     const result = await categoryService.getAllCategories(includeInactive);
     
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(500).json(result);
+    // Clear timeout if operation completed
+    clearTimeout(timeoutId);
+    
+    if (!res.headersSent) {
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(500).json(result);
+      }
     }
   } catch (error) {
     console.error("Error in getAllCategories:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Erro interno do servidor",
-      error: error.message 
-    });
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        success: false, 
+        message: "Erro interno do servidor",
+        error: error.message 
+      });
+    }
   }
 };
 
