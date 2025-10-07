@@ -225,55 +225,38 @@ class CategoryService {
    */
   async createCategory(categoryData, imageFile = null) {
     try {
-      console.log('=== CREATE CATEGORY FROM SCRATCH ===');
+      console.log('=== CREATE CATEGORY (FOOD SYSTEM STYLE) ===');
       console.log('Data:', categoryData);
-      console.log('Image file:', imageFile ? imageFile.originalname : 'None');
+      console.log('Image file:', imageFile ? `${imageFile.filename} (${imageFile.originalname})` : 'None');
 
       // Basic validation
       if (!categoryData.name) {
-        return { success: false, message: "Nome é obrigatório" };
+        return { success: false, message: "Nome da categoria é obrigatório" };
       }
 
-      // Handle image first
-      let imageUrl = null;
-      if (imageFile) {
-        const timestamp = Date.now();
-        const extension = path.extname(imageFile.originalname);
-        const filename = `category_${timestamp}${extension}`;
-        
-        // Ensure directory exists
-        const uploadsDir = path.join(process.cwd(), 'uploads', 'categories');
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-        
-        const finalPath = path.join(uploadsDir, filename);
-        
-        // Copy file (safer than rename)
-        fs.copyFileSync(imageFile.path, finalPath);
-        
-        // Clean up temp file
-        if (fs.existsSync(imageFile.path)) {
-          fs.unlinkSync(imageFile.path);
-        }
-        
-        imageUrl = `/uploads/categories/${filename}`;
-        console.log('Image saved to:', imageUrl);
+      if (!imageFile || !imageFile.filename) {
+        return { success: false, message: "Imagem da categoria é obrigatória" };
       }
 
-      // Create category with minimal data
-      const newCategory = {
+      // Use the filename that multer already created (same as food system)
+      let image_filename = `${imageFile.filename}`;
+      console.log('Using multer filename:', image_filename);
+
+      // Create category data (exactly like food system)
+      const categoryDataClean = {
         name: categoryData.name,
         originalName: categoryData.originalName || categoryData.name,
-        slug: categoryData.slug || categoryData.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        image: imageUrl,
-        isActive: true,
-        order: 0
+        slug: categoryData.slug || categoryData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+        image: `/uploads/${image_filename}`, // Same path format as food
+        isActive: categoryData.isActive !== undefined ? categoryData.isActive : true,
+        order: parseInt(categoryData.order) || 0
       };
 
-      console.log('Creating category with data:', newCategory);
+      console.log('Creating category with data:', categoryDataClean);
 
-      const category = await categoryModel.create(newCategory);
+      // Create category (same as food system)
+      const category = new categoryModel(categoryDataClean);
+      await category.save();
       
       console.log('Category created successfully:', category._id);
 
@@ -492,29 +475,15 @@ class CategoryService {
       if (updateData.isActive !== undefined) updateFields.isActive = updateData.isActive;
       if (updateData.order !== undefined) updateFields.order = parseInt(updateData.order);
 
-      // Handle new image
-      if (imageFile) {
-        console.log('Processing new image...');
+      // Handle new image (food system style)
+      if (imageFile && imageFile.filename) {
+        console.log('Processing new image with multer filename:', imageFile.filename);
         
-        const timestamp = Date.now();
-        const extension = path.extname(imageFile.originalname);
-        const filename = `category_${timestamp}${extension}`;
+        // Use multer filename directly (same as food system)
+        let image_filename = `${imageFile.filename}`;
+        updateFields.image = `/uploads/${image_filename}`;
         
-        // Ensure directory exists
-        const uploadsDir = path.join(process.cwd(), 'uploads', 'categories');
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-        
-        const finalPath = path.join(uploadsDir, filename);
-        
-        // Copy new image
-        fs.copyFileSync(imageFile.path, finalPath);
-        
-        // Clean up temp file
-        if (fs.existsSync(imageFile.path)) {
-          fs.unlinkSync(imageFile.path);
-        }
+        console.log('Image updated to:', updateFields.image);
         
         // Delete old image
         if (existingCategory.image) {
