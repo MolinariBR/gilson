@@ -85,7 +85,9 @@ const ExploreMenu = ({category, setCategory}) => {
                     category: item.menu_name,
                     imageSrc: item.menu_image,
                     baseUrl: url,
-                    fullUrl: item.menu_image ? `${url}${item.menu_image}` : 'No image',
+                    fullUrl: item.menu_image && item.menu_image.startsWith('http') 
+                      ? item.menu_image 
+                      : item.menu_image ? `${url}${item.menu_image}` : 'No image',
                     error: e
                   });
                 }}
@@ -93,7 +95,9 @@ const ExploreMenu = ({category, setCategory}) => {
                   console.log(`✅ Successfully loaded category image:`, {
                     category: item.menu_name,
                     imageSrc: item.menu_image,
-                    fullUrl: item.menu_image ? `${url}${item.menu_image}` : 'No image'
+                    fullUrl: item.menu_image && item.menu_image.startsWith('http') 
+                      ? item.menu_image 
+                      : item.menu_image ? `${url}${item.menu_image}` : 'No image'
                   });
                 }}
               />
