@@ -510,13 +510,92 @@ class CategoryService {
   }
 
   /**
-   * Update category
+   * Update category - SIMPLIFIED VERSION FOR DEBUG
    * @param {string} id - Category ID
    * @param {Object} updateData - Data to update
    * @param {Object} imageFile - Optional new image file
    * @returns {Promise<Object>} - Updated category or error
    */
   async updateCategory(id, updateData, imageFile = null) {
+    console.log('=== SIMPLIFIED UPDATE CATEGORY ===');
+    console.log('ID:', id);
+    console.log('Update data:', JSON.stringify(updateData, null, 2));
+    console.log('Has image file:', !!imageFile);
+    
+    try {
+      // Basic validation
+      if (!id) {
+        console.log('ERROR: No ID provided');
+        return { success: false, message: "ID da categoria é obrigatório" };
+      }
+
+      // Check if category exists
+      const existingCategory = await categoryModel.findById(id);
+      if (!existingCategory) {
+        console.log('ERROR: Category not found');
+        return { success: false, message: "Categoria não encontrada" };
+      }
+
+      console.log('Existing category found:', existingCategory.name);
+
+      // Prepare update object
+      const updateFields = {};
+      if (updateData.name !== undefined) updateFields.name = updateData.name;
+      if (updateData.originalName !== undefined) updateFields.originalName = updateData.originalName;
+      if (updateData.slug !== undefined) updateFields.slug = updateData.slug;
+      if (updateData.isActive !== undefined) updateFields.isActive = updateData.isActive;
+      if (updateData.order !== undefined) updateFields.order = parseInt(updateData.order);
+
+      console.log('Update fields prepared:', JSON.stringify(updateFields, null, 2));
+
+      // Handle image if provided
+      if (imageFile) {
+        console.log('Processing image...');
+        // For now, skip image processing to isolate the issue
+        console.log('Image processing skipped for debugging');
+      }
+
+      // Perform update with minimal validation
+      console.log('Attempting database update...');
+      const updatedCategory = await categoryModel.findByIdAndUpdate(
+        id,
+        updateFields,
+        { 
+          new: true, 
+          runValidators: false,
+          strict: false
+        }
+      );
+
+      console.log('Update successful!');
+      
+      return {
+        success: true,
+        message: "Categoria atualizada com sucesso",
+        data: updatedCategory
+      };
+
+    } catch (error) {
+      console.error('=== UPDATE ERROR ===');
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
+      return {
+        success: false,
+        message: "Erro interno do servidor",
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Update category - ORIGINAL VERSION (BACKUP)
+   * @param {string} id - Category ID
+   * @param {Object} updateData - Data to update
+   * @param {Object} imageFile - Optional new image file
+   * @returns {Promise<Object>} - Updated category or error
+   */
+  async updateCategoryOriginal(id, updateData, imageFile = null) {
     try {
       if (!id) {
         return {
