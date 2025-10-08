@@ -1,5 +1,6 @@
 import CategoryService from "../services/categoryService.js";
 import userModel from "../models/userModel.js";
+import categoryModel from "../models/categoryModel.js";
 import { logger, imageLogger } from "../utils/logger.js";
 import imageLoggingIntegration from "../utils/imageLoggingIntegration.js";
 
