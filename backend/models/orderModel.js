@@ -16,9 +16,14 @@ const orderSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   phone: { 
     type: String, 
-    required: [true, 'Telefone é obrigatório'],
+    required: false, // Telefone não é obrigatório
     validate: {
-      validator: mongoosePhoneValidator,
+      validator: function(value) {
+        // Se não tem valor, é válido (opcional)
+        if (!value) return true;
+        // Se tem valor, valida
+        return mongoosePhoneValidator(value);
+      },
       message: function(props) {
         return getPhoneValidationError(props.value);
       }
