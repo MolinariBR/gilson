@@ -54,16 +54,13 @@ categoryRouter.use(recordMetrics);
 categoryRouter.use(logSlowQueries(500)); // Log queries taking more than 500ms
 
 // Admin routes (require authentication and authorization)
+// SIMPLE VERSION LIKE FOOD ROUTES
 categoryRouter.post("/admin/categories", 
-  adminAuthMiddleware,
-  adminRateLimit(),
-  adminActionLogger('CREATE_CATEGORY'),
   categoryImageValidation,
   handleMulterError,
   imageCompressionMiddleware.compressUploadedImages,
   imageCompressionMiddleware.logCompressionResults,
-  sanitizeCategoryInput,
-  validateSpecificFields(['name']),
+  adminAuthMiddleware,
   createCategory
 );
 
@@ -83,15 +80,13 @@ categoryRouter.get("/admin/categories/:id",
   getCategoryById
 );
 
+// SIMPLE VERSION LIKE FOOD ROUTES
 categoryRouter.put("/admin/categories/:id", 
-  adminAuthMiddleware,
-  adminRateLimit(),
-  adminActionLogger('UPDATE_CATEGORY'),
-  sanitizeCategoryInput,
   categoryImageValidation,
   handleMulterError,
   imageCompressionMiddleware.compressUploadedImages,
   imageCompressionMiddleware.logCompressionResults,
+  adminAuthMiddleware,
   updateCategory
 );
 

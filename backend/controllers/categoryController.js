@@ -5,63 +5,33 @@ import imageLoggingIntegration from "../utils/imageLoggingIntegration.js";
 
 const categoryService = new CategoryService();
 
-// Create new category (Admin only)
+// Create new category (Admin only) - SIMPLE LIKE FOOD
 const createCategory = async (req, res) => {
-  const startTime = Date.now();
-  const userId = req.user?.id || 'unknown';
-  const categoryName = req.body?.name || 'unknown';
+  let image_filename = `${req.file.filename}`;
   
   try {
-    // Log API request
-    logger.api.request('POST', '/api/admin/categories', req.ip);
-    logger.backend.info(`Admin ${userId} creating category: ${categoryName}`);
-    
-    // Log image upload if present
-    if (req.file) {
-      logger.image.upload.start(req.file.originalname, req.file.size, req.file.mimetype, userId);
+    // Check admin (simple like food)
+    let userData = await userModel.findById(req.body.userId);
+    if (!userData || userData.role !== "admin") {
+      return res.json({ success: false, message: "You are not admin" });
     }
-    
+
     const categoryData = {
       name: req.body.name,
       originalName: req.body.originalName || req.body.name,
-      slug: req.body.slug,
+      slug: req.body.slug || req.body.name.toLowerCase().replace(/\s+/g, '-'),
+      image: `/uploads/${image_filename}`,
       isActive: req.body.isActive !== undefined ? req.body.isActive : true,
-      order: req.body.order || 0
+      order: parseInt(req.body.order) || 0
     };
 
-    const result = await categoryService.createCategory(categoryData, req.file);
+    const category = new categoryModel(categoryData);
+    await category.save();
+    res.json({ success: true, message: "Category Added" });
     
-    const duration = Date.now() - startTime;
-    
-    if (result.success) {
-      logger.backend.info(`Category created successfully: ${categoryName} (${duration}ms)`);
-      
-      // Record performance metrics
-      imageLogger.performanceCollector.record('category_creation', duration);
-      
-      res.json(result);
-    } else {
-      logger.backend.warn(`Category creation failed: ${categoryName} - ${result.message}`);
-      
-      // Log image upload failure if applicable
-      if (req.file && result.errors?.image) {
-        logger.image.upload.error(req.file.originalname, new Error(result.message), userId);
-      }
-      
-      res.status(400).json(result);
-    }
   } catch (error) {
-    const duration = Date.now() - startTime;
-    logger.api.error(`Error in createCategory for ${categoryName}:`, error);
-    
-    // Record failed operation metrics
-    imageLogger.performanceCollector.record('category_creation_failed', duration);
-    
-    res.status(500).json({ 
-      success: false, 
-      message: "Erro interno do servidor",
-      error: error.message 
-    });
+    console.log(error);
+    res.json({ success: false, message: "Error" });
   }
 };
 
@@ -125,44 +95,43 @@ const getCategoryById = async (req, res) => {
   }
 };
 
-// Update category (Admin only) - DEBUG VERSION
+// Update category (Admin only) - SIMPLE LIKE FOOD
 const updateCategory = async (req, res) => {
-  console.log('=== UPDATE CATEGORY CONTROLLER DEBUG ===');
-  console.log('Method:', req.method);
-  console.log('URL:', req.url);
-  console.log('Params:', req.params);
-  console.log('Body:', req.body);
-  console.log('File:', req.file ? {
-    fieldname: req.file.fieldname,
-    originalname: req.file.originalname,
-    filename: req.file.filename,
-    size: req.file.size,
-    mimetype: req.file.mimetype
-  } : 'No file');
-  console.log('Headers:', req.headers);
-  
   try {
-    // Super simple response for now
-    res.json({
-      success: true,
-      message: "Debug: Controller reached successfully",
-      data: {
-        receivedParams: req.params,
-        receivedBody: req.body,
-        hasFile: !!req.file,
-        fileInfo: req.file ? req.file.filename : null
-      }
-    });
+    // Check admin (simple like food)
+    let userData = await userModel.findById(req.body.userId);
+    if (!userData || userData.role !== "admin") {
+      return res.json({ success: false, message: "You are not admin" });
+    }
+
+    const updateData = {};
+    if (req.body.name) updateData.name = req.body.name;
+    if (req.body.originalName) updateData.originalName = req.body.originalName;
+    if (req.body.slug) updateData.slug = req.body.slug;
+    if (req.body.isActive !== undefined) updateData.isActive = req.body.isActive;
+    if (req.body.order !== undefined) updateData.order = parseInt(req.body.order);
+
+    // Handle image like food system
+    if (req.file) {
+      updateData.image = `/uploads/${req.file.filename}`;
+    }
+
+    // Update category
+    const updatedCategory = await categoryModel.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    if (!updatedCategory) {
+      return res.json({ success: false, message: "Category not found" });
+    }
+
+    res.json({ success: true, message: "Category Updated" });
     
   } catch (error) {
-    console.error('=== CONTROLLER ERROR ===');
-    console.error('Error:', error);
-    
-    res.status(500).json({ 
-      success: false, 
-      message: "Erro no controller",
-      error: error.message 
-    });
+    console.log(error);
+    res.json({ success: false, message: "Error" });
   }
 };
 
