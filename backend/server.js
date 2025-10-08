@@ -616,6 +616,10 @@ app.get("*", (req, res) => {
     // API routes that don't exist
     logger.api.error(`Rota API não encontrada: ${req.path}`);
     res.status(404).json({ success: false, message: "API endpoint not found" });
+  } else if (req.path.startsWith('/uploads')) {
+    // Static files - let express.static handle it, don't serve HTML
+    logger.backend.info(`Arquivo estático não encontrado: ${req.path}`);
+    res.status(404).json({ success: false, message: "File not found" });
   } else {
     // Serve frontend index.html for all other routes
     logger.backend.info(`Servindo frontend HTML para: ${req.path}`);

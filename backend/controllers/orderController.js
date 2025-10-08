@@ -33,6 +33,7 @@ const placeOrder = async (req, res) => {
       items: req.body.items,
       amount: req.body.amount,
       address: req.body.address,
+      phone: req.body.phone || req.body.address?.phone || "11999999999", // Fallback phone
     });
     await newOrder.save();
     await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
