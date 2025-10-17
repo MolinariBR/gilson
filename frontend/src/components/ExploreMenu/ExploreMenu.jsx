@@ -101,18 +101,7 @@ const ExploreMenu = ({category, setCategory}) => {
                 rootMargin={connectionConfig.rootMargin}
                 priority={index < 3 ? "high" : "normal"} // First 3 categories get high priority
                 onError={(e, details) => {
-                  console.error(`❌ Failed to load category image:`, {
-                    category: item.menu_name,
-                    categoryId: item._id,
-                    imageSrc: item.menu_image,
-                    baseUrl: url,
-                    fullUrl: item.menu_image && item.menu_image.startsWith('http') 
-                      ? item.menu_image 
-                      : item.menu_image ? `${url}${item.menu_image}` : 'No image',
-                    error: e,
-                    connectionType: connectionConfig.quality,
-                    ...details
-                  });
+                  // Error handled by SafeImage fallback - no logging needed
                 }}
                 onLoad={() => {
                   // Cache successful load
