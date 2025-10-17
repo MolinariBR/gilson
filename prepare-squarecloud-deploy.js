@@ -33,10 +33,13 @@ removeDir('.git');
 removeDir('.kiro');
 removeDir('Food-Delivery-main');
 
-// Remover uploads de teste (manter estrutura de pastas)
-removeDir('backend/uploads');
-fs.mkdirSync('backend/uploads', { recursive: true });
-fs.mkdirSync('backend/uploads/categories', { recursive: true });
+// Garantir que a estrutura de uploads exista (preservar imagens existentes)
+if (!fs.existsSync('backend/uploads')) {
+  fs.mkdirSync('backend/uploads', { recursive: true });
+}
+if (!fs.existsSync('backend/uploads/categories')) {
+  fs.mkdirSync('backend/uploads/categories', { recursive: true });
+}
 
 // Remover testes
 removeDir('backend/tests');
