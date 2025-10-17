@@ -26,7 +26,9 @@ export const preloadCriticalCategoryImages = (categories, baseUrl, maxPreload = 
       
       const imageUrl = imagePath.startsWith('/uploads/') 
         ? `${baseUrl}${imagePath}`
-        : `${baseUrl}/uploads/${imagePath}`;
+        : imagePath.startsWith('/')
+        ? `${baseUrl}${imagePath}`  // Root paths like /pastel-category.svg
+        : `${baseUrl}/uploads/${imagePath}`;  // Legacy relative paths
 
       // Create link element for preloading
       const link = document.createElement('link');
