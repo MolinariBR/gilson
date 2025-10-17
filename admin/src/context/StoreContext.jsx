@@ -13,8 +13,8 @@ const StoreContextProvider = (props) => {
       if (localStorage.getItem("token")) {
         setToken(localStorage.getItem("token"));
       }
-      if (localStorage.getItem("admin")) {
-        setAdmin(localStorage.getItem("admin"));
+      if (localStorage.getItem("admin") === "true") {
+        setAdmin(true);
       }
     }
     loadData();
