@@ -5,27 +5,28 @@
 **Último teste realizado:** $(date)
 **Resultado:** ✅ Todas as imagens carregando perfeitamente
 **Status da API:** ✅ Retornando imagens corretas
+**Headers de Cache:** ✅ No-cache implementado no servidor
 **Imagens testadas:** ✅ Todas com status 200
 
 ### Problema Final Resolvido
-- ❌ Antes: `/uploads//cerveja-category.svg` (404)
-- ❌ Antes: `/uploads/image-1760738279911-589520138.jpg` (404)
-- ✅ Agora: `/cerveja-category.svg` (200 OK)
+- ❌ Antes: `/uploads//pastel-category.svg` (404 - cache antigo)
 - ✅ Agora: `/pastel-category.svg` (200 OK)
+- ❌ Antes: `/uploads//cerveja-category.svg` (404 - cache antigo)
+- ✅ Agora: `/cerveja-category.svg` (200 OK)
+- ❌ Antes: `/uploads//placeholder-category.svg` (404 - cache antigo)
 - ✅ Agora: `/placeholder-category.svg` (200 OK)
 
 ### Ações Executadas
-1. ✅ Identificado problema: categorias com imagens JPG inexistentes
-2. ✅ Executado script de correção para definir imagens SVG padrão
-3. ✅ Limpo cache do CategoryService
-4. ✅ Forçado reimplantação no SquareCloud via git push
-5. ✅ Verificado carregamento de todas as imagens SVG
-6. ✅ Executado testes completos de validação
+1. ✅ Identificado problema: Cache de navegador com versão antiga do JavaScript
+2. ✅ Implementado headers `no-cache` no servidor para HTML
+3. ✅ Forçado reimplantação no SquareCloud
+4. ✅ Verificado carregamento correto das imagens
+5. ✅ Executado testes completos de validação
 
-### Categorias Corrigidas
-- **Pasteis**: `/uploads/image-1760738279911-589520138.jpg` → `/pastel-category.svg`
-- **Cervejas**: Já estava correto `/cerveja-category.svg`
-- **Pastel**: `/uploads/image-1760738338080-188940503.jpg` → `/placeholder-category.svg`
+### Solução Técnica
+- **Causa Raiz:** Navegador cacheando `index-Bj2J3eVH.js` (versão antiga) em vez de `index-Bo8Tvo-Y.js` (versão corrigida)
+- **Solução:** Servidor agora envia headers `Cache-Control: no-cache` para arquivos HTML, forçando reload do JavaScript corrigido
+- **Resultado:** Frontend agora carrega as imagens corretas sem prefixos `/uploads/` desnecessários
 
 Esta pasta contém ferramentas para testar e debugar problemas com imagens de categoria.
 
