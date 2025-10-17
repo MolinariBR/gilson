@@ -1,0 +1,21 @@
+{
+  "structure": {
+    "backend": "Serves API and static files",
+    "frontend": "Built and served as static files from /",
+    "admin": "Built and served as static files from /admin"
+  },
+  "memory": "1024MB (full 1GB allocation)",
+  "domains": {
+    "frontend": "https://your-app.squarecloud.app/",
+    "admin": "https://your-app.squarecloud.app/admin",
+    "api": "https://your-app.squarecloud.app/api/*"
+  },
+  "files": {
+    "main": "backend/server.js",
+    "static": [
+      "frontend/dist/",
+      "admin/dist/"
+    ],
+    "uploads": "backend/uploads/"
+  }
+}

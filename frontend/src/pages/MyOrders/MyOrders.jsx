@@ -3,7 +3,7 @@ import "./MyOrders.css";
 import { StoreContext } from "../../context/StoreContext";
 import axios from "axios";
 import { assets } from "../../assets/frontend_assets/assets";
-import { TRANSLATIONS } from "../../constants/translations";
+import { TRANSLATIONS, getOrderStatusTranslation } from "../../constants/translations";
 
 const MyOrders = () => {
   const { url, token } = useContext(StoreContext);
@@ -46,7 +46,7 @@ const MyOrders = () => {
               <p>{TRANSLATIONS.order.items}: {order.items.length}</p>
               <p>
                 <span>&#x25cf;</span>
-                <b> {order.status}</b>
+                <b> {getOrderStatusTranslation(order.status)}</b>
               </p>
               <button onClick={fetchOrders}>{TRANSLATIONS.order.trackOrder}</button>
             </div>

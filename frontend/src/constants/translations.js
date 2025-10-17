@@ -71,7 +71,13 @@ export const TRANSLATIONS = {
     proceedToPayment: "PROSSEGUIR PARA PAGAMENTO",
     orders: "Pedidos",
     items: "itens",
-    trackOrder: "Rastrear Pedido"
+    trackOrder: "Rastrear Pedido",
+    // Order status translations
+    status: {
+      paid: "Pago",
+      failed: "Falhou",
+      pending: "Pendente"
+    }
   },
 
   // Footer content
@@ -169,6 +175,21 @@ export const getTranslation = (path, fallback = '', params = {}) => {
     }
     return fallback;
   }
+};
+
+/**
+ * Helper function to get order status translation
+ * @param {string} status - Order status in English
+ * @returns {string} Translated status or original if not found
+ */
+export const getOrderStatusTranslation = (status) => {
+  const statusMap = {
+    "Paid": TRANSLATIONS.order.status.paid,
+    "Failed": TRANSLATIONS.order.status.failed,
+    "Pending": TRANSLATIONS.order.status.pending
+  };
+  
+  return statusMap[status] || status;
 };
 
 /**
