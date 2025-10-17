@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Script para corrigir referências de imagens de categoria
+ * Script para corrigir referências de imagens de categoria - Define imagens padrão
  */
 
 import { connectDB } from '../config/db.js';
@@ -23,53 +23,36 @@ async function fixCategoryImages() {
     
     console.log(`📊 Encontradas ${categories.length} categorias`);
     
-    const uploadsDir = path.join(__dirname, '..', 'uploads', 'categories');
-    const availableFiles = fs.readdirSync(uploadsDir).filter(file => 
-      !file.startsWith('.') && file.endsWith('.jpg')
-    );
-    
-    console.log('📁 Arquivos disponíveis:', availableFiles);
+    // Imagens padrão baseadas no nome da categoria
+    const defaultImages = {
+      'Pasteis': '/pastel-category.svg',
+      'Bebidas': '/bebida-category.svg', 
+      'Cervejas': '/cerveja-category.svg',
+      'default': '/placeholder-category.svg'
+    };
     
     for (const category of categories) {
       console.log(`\n🔍 Verificando categoria: ${category.name}`);
       console.log(`   Imagem atual: ${category.image}`);
       
-      if (category.image) {
-        const filename = path.basename(category.image);
-        const filePath = path.join(uploadsDir, filename);
+      // Sempre definir imagem padrão para evitar 404
+      const defaultImage = defaultImages[category.name] || defaultImages.default;
+      
+      if (category.image !== defaultImage) {
+        console.log(`🔄 Atualizando para imagem padrão: ${defaultImage}`);
         
-        if (!fs.existsSync(filePath)) {
-          console.log(`❌ Arquivo não encontrado: ${filename}`);
-          
-          // Procurar arquivo similar
-          const categoryNameLower = category.name.toLowerCase();
-          const similarFile = availableFiles.find(file => 
-            file.toLowerCase().includes(categoryNameLower) ||
-            categoryNameLower.includes(file.toLowerCase().split('_')[0])
-          );
-          
-          if (similarFile) {
-            const newImagePath = `/uploads/categories/${similarFile}`;
-            console.log(`✅ Arquivo similar encontrado: ${similarFile}`);
-            console.log(`🔄 Atualizando para: ${newImagePath}`);
-            
-            await categoryModel.findByIdAndUpdate(category._id, {
-              image: newImagePath
-            });
-            
-            console.log(`✅ Categoria ${category.name} atualizada!`);
-          } else {
-            console.log(`⚠️  Nenhum arquivo similar encontrado para ${category.name}`);
-          }
-        } else {
-          console.log(`✅ Arquivo existe: ${filename}`);
-        }
+        await categoryModel.findByIdAndUpdate(category._id, {
+          image: defaultImage
+        });
+        
+        console.log(`✅ Categoria ${category.name} atualizada com imagem padrão!`);
       } else {
-        console.log(`⚠️  Categoria sem imagem: ${category.name}`);
+        console.log(`✅ Categoria ${category.name} já tem imagem padrão`);
       }
     }
     
     console.log('\n🎉 Correção concluída!');
+    console.log('📝 Todas as categorias agora usam imagens padrão que existem no servidor.');
     process.exit(0);
     
   } catch (error) {
