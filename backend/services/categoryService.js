@@ -1127,10 +1127,19 @@ class CategoryService {
 
     // Handle single category
     if (categoryData.image) {
-      // Ensure image URL is consistent and starts with /uploads/
-      if (!categoryData.image.startsWith('/uploads/')) {
-        categoryData.image = this.generateCategoryImageUrl(categoryData.image);
+      // If image already starts with /uploads/, keep as is
+      if (categoryData.image.startsWith('/uploads/')) {
+        return categoryData;
       }
+      
+      // If image starts with / but not /uploads/ (like /pastel-category.svg), 
+      // treat as root path (served from frontend/dist/)
+      if (categoryData.image.startsWith('/')) {
+        return categoryData; // Keep as is - these are root paths
+      }
+      
+      // For legacy paths without leading slash, add /uploads/categories/
+      categoryData.image = `/uploads/categories/${categoryData.image}`;
     }
 
     return categoryData;
