@@ -1,21 +1,26 @@
 # Pasta de Testes - Problemas com Imagens
 
-## ✅ Status: CORRIGIDO
+## ✅ Status: COMPLETAMENTE CORRIGIDO
 
 **Último teste realizado:** $(date)
 **Resultado:** ✅ Todas as imagens carregando corretamente
-**URLs retornadas:** `/pastel-category.svg`, `/cerveja-category.svg` (sem prefixos incorretos)
+**URLs retornadas:** `/pastel-category.svg`, `/cerveja-category.svg` (caminhos absolutos corretos)
 
 ### Problema Resolvido
-- ❌ Antes: `/uploads/categories//pastel-category.svg` (causava 404)
+- ❌ Antes: `/uploads/categories//cerveja-category.svg` (causava 404)
+- ❌ Antes: `/uploads//pastel-category.svg` (causava 404)  
 - ✅ Agora: `/pastel-category.svg` (carrega corretamente)
+- ✅ Agora: `/cerveja-category.svg` (carrega corretamente)
 
 ### Ações Realizadas
-1. ✅ Corrigido `processCategoryImageUrls` no CategoryService
-2. ✅ Limpo cache do serviço
-3. ✅ Implantado mudanças via git push
-4. ✅ Verificado funcionamento com testes curl
-5. ✅ Criado scripts de manutenção e diagnóstico
+1. ✅ Corrigido `processCategoryImageUrls` no CategoryService (backend)
+2. ✅ Corrigido `preloadCriticalCategoryImages` no categoryImagePreloader (frontend)
+3. ✅ Limpo cache do CategoryService
+4. ✅ Feito build do frontend com correções
+5. ✅ Copiado arquivos do build para backend/public
+6. ✅ Implantado mudanças via git push
+7. ✅ Verificado funcionamento com testes curl
+8. ✅ Criado scripts de manutenção e diagnóstico
 
 Esta pasta contém ferramentas para testar e debugar problemas com imagens de categoria.
 
