@@ -597,6 +597,16 @@ app.get('/admin/force-refresh', (req, res) => {
   res.sendFile(path.join(__dirname, '../admin/dist/index.html'));
 });
 
+// Servir HTML com headers de no-cache para evitar cache de versão antiga
+const serveHTMLWithNoCache = (res, filePath) => {
+  disableCloudflareOptimizations(res);
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('X-Force-Refresh', Date.now().toString());
+  res.sendFile(filePath);
+};
+
 // Handle SPA routing ONLY for HTML pages (not assets)
 app.get("*", (req, res) => {
   logger.api.request(req.method, req.path, req.ip);
@@ -610,8 +620,7 @@ app.get("*", (req, res) => {
   // If it's an admin route, serve admin index.html
   if (req.path.startsWith('/admin')) {
     logger.backend.info(`Servindo admin HTML para: ${req.path}`);
-    disableCloudflareOptimizations(res);
-    res.sendFile(path.join(__dirname, '../admin/dist/index.html'));
+    serveHTMLWithNoCache(res, path.join(__dirname, '../admin/dist/index.html'));
   } else if (req.path.startsWith('/api')) {
     // API routes that don't exist
     logger.api.error(`Rota API não encontrada: ${req.path}`);
@@ -623,8 +632,7 @@ app.get("*", (req, res) => {
   } else {
     // Serve frontend index.html for all other routes
     logger.backend.info(`Servindo frontend HTML para: ${req.path}`);
-    disableCloudflareOptimizations(res);
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    serveHTMLWithNoCache(res, path.join(__dirname, '../frontend/dist/index.html'));
   }
 });
 
