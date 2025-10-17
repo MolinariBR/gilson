@@ -16,12 +16,17 @@ export const resolveImageUrl = (imagePath, baseUrl) => {
     return imagePath;
   }
   
-  // If it already starts with /uploads/, just prepend base URL
+  // If it starts with /uploads/, just prepend base URL
   if (imagePath.startsWith('/uploads/')) {
     return baseUrl + imagePath;
   }
   
-  // Otherwise, assume it needs /uploads/ prefix
+  // If it starts with / but not /uploads/, treat as root path (for SVG placeholders)
+  if (imagePath.startsWith('/')) {
+    return baseUrl + imagePath;
+  }
+  
+  // Otherwise, assume it needs /uploads/ prefix (legacy support)
   return baseUrl + '/uploads/' + imagePath;
 };
 

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Imagens de Categoria</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .image-test {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .image-test img {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Teste de Imagens de Categoria</h1>
+
+    <div class="test-section">
+        <h2>Teste 1: Imagens Diretas (de frontend/dist)</h2>
+        <div class="image-test">
+            <img src="/pastel-category.svg" alt="Pastel" onerror="markError(this)" onload="markSuccess(this)">
+            <span>pastel-category.svg</span>
+            <span class="status" id="test1-pastel">Testando...</span>
+        </div>
+        <div class="image-test">
+            <img src="/cerveja-category.svg" alt="Cerveja" onerror="markError(this)" onload="markSuccess(this)">
+            <span>cerveja-category.svg</span>
+            <span class="status" id="test1-cerveja">Testando...</span>
+        </div>
+        <div class="image-test">
+            <img src="/bebida-category.svg" alt="Bebida" onerror="markError(this)" onload="markSuccess(this)">
+            <span>bebida-category.svg</span>
+            <span class="status" id="test1-bebida">Testando...</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Teste 2: Imagens via API (simulando frontend)</h2>
+        <p>Base URL: <span id="base-url"></span></p>
+        <div class="image-test">
+            <img id="api-pastel" alt="Pastel API" onerror="markError(this)" onload="markSuccess(this)">
+            <span>API: /pastel-category.svg</span>
+            <span class="status" id="test2-pastel">Testando...</span>
+        </div>
+        <div class="image-test">
+            <img id="api-cerveja" alt="Cerveja API" onerror="markError(this)" onload="markSuccess(this)">
+            <span>API: /cerveja-category.svg</span>
+            <span class="status" id="test2-cerveja">Testando...</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Teste 3: Verificação de Banco de Dados</h2>
+        <button onclick="testDatabase()">Verificar Categorias no Banco</button>
+        <pre id="db-result"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>Teste 4: Logs do Console</h2>
+        <button onclick="clearConsole()">Limpar Console</button>
+        <button onclick="showLogs()">Mostrar Logs Recentes</button>
+        <div id="console-logs"></div>
+    </div>
+
+    <script>
+        const baseUrl = 'https://pastel-delivery.squareweb.app';
+
+        document.getElementById('base-url').textContent = baseUrl;
+
+        // Teste 2: Simular como o frontend carrega
+        document.getElementById('api-pastel').src = baseUrl + '/pastel-category.svg';
+        document.getElementById('api-cerveja').src = baseUrl + '/cerveja-category.svg';
+
+        function markSuccess(img) {
+            const statusId = img.id.replace('api-', 'test2-').replace('test1-', 'test1-');
+            const statusEl = document.getElementById(statusId);
+            if (statusEl) {
+                statusEl.textContent = '✅ Sucesso';
+                statusEl.className = 'status success';
+            }
+        }
+
+        function markError(img) {
+            const statusId = img.id.replace('api-', 'test2-').replace('test1-', 'test1-');
+            const statusEl = document.getElementById(statusId);
+            if (statusEl) {
+                statusEl.textContent = '❌ Erro 404';
+                statusEl.className = 'status error';
+            }
+            console.error('Erro ao carregar imagem:', img.src);
+        }
+
+        async function testDatabase() {
+            try {
+                const response = await fetch(baseUrl + '/api/categories');
+                const data = await response.json();
+
+                if (data.success) {
+                    const categories = data.data.map(cat => ({
+                        name: cat.name,
+                        image: cat.image,
+                        imageUrl: cat.image ? (cat.image.startsWith('http') ? cat.image : baseUrl + cat.image) : 'Nenhuma'
+                    }));
+
+                    document.getElementById('db-result').textContent = JSON.stringify(categories, null, 2);
+                } else {
+                    document.getElementById('db-result').textContent = 'Erro na API: ' + data.message;
+                }
+            } catch (error) {
+                document.getElementById('db-result').textContent = 'Erro: ' + error.message;
+            }
+        }
+
+        function clearConsole() {
+            console.clear();
+            document.getElementById('console-logs').innerHTML = '';
+        }
+
+        function showLogs() {
+            // Como não podemos acessar o console diretamente, vamos mostrar instruções
+            document.getElementById('console-logs').innerHTML = `
+                <p>Para ver os logs:</p>
+                <ol>
+                    <li>Abra o DevTools (F12)</li>
+                    <li>Vá para a aba Console</li>
+                    <li>Procure por mensagens de erro relacionadas às imagens</li>
+                    <li>Procure por "Failed to load category image" ou erros 404</li>
+                </ol>
+            `;
+        }
+
+        // Auto-executar testes
+        window.addEventListener('load', function() {
+            // Os testes de imagem direta já estão carregando
+            // O teste de API também
+        });
+    </script>
+</body>
+</html>

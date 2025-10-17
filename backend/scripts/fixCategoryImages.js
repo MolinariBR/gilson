@@ -35,20 +35,16 @@ async function fixCategoryImages() {
       console.log(`\n🔍 Verificando categoria: ${category.name}`);
       console.log(`   Imagem atual: ${category.image}`);
       
-      // Sempre definir imagem padrão para evitar 404
+      // Sempre definir imagem padrão para evitar 404 (forçar atualização)
       const defaultImage = defaultImages[category.name] || defaultImages.default;
       
-      if (category.image !== defaultImage) {
-        console.log(`🔄 Atualizando para imagem padrão: ${defaultImage}`);
-        
-        await categoryModel.findByIdAndUpdate(category._id, {
-          image: defaultImage
-        });
-        
-        console.log(`✅ Categoria ${category.name} atualizada com imagem padrão!`);
-      } else {
-        console.log(`✅ Categoria ${category.name} já tem imagem padrão`);
-      }
+      console.log(`🔄 Atualizando para imagem padrão: ${defaultImage}`);
+      
+      await categoryModel.findByIdAndUpdate(category._id, {
+        image: defaultImage
+      });
+      
+      console.log(`✅ Categoria ${category.name} atualizada com imagem padrão!`);
     }
     
     console.log('\n🎉 Correção concluída!');
