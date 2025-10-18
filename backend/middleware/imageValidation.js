@@ -207,10 +207,9 @@ const createImageValidationMiddleware = (fieldName = 'image', uploadPath = 'uplo
       cb(null, fullUploadPath);
     },
     filename: (req, file, cb) => {
-      // Generate unique filename with timestamp
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const extension = path.extname(file.originalname);
-      cb(null, file.fieldname + '-' + uniqueSuffix + extension);
+      // Salva o arquivo com o nome original enviado pelo frontend
+      cb(null, file.originalname);
+    }
     }
   });
   
