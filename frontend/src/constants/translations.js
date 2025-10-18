@@ -76,7 +76,8 @@ export const TRANSLATIONS = {
     status: {
       paid: "Pago",
       failed: "Falhou",
-      pending: "Pendente"
+      pending: "Pendente",
+      outForDelivery: "Saiu para Entrega"
     }
   },
 
@@ -186,7 +187,8 @@ export const getOrderStatusTranslation = (status) => {
   const statusMap = {
     "Paid": TRANSLATIONS.order.status.paid,
     "Failed": TRANSLATIONS.order.status.failed,
-    "Pending": TRANSLATIONS.order.status.pending
+    "Pending": TRANSLATIONS.order.status.pending,
+    "Out for delivery": TRANSLATIONS.order.status.outForDelivery
   };
   
   return statusMap[status] || status;
