@@ -210,7 +210,6 @@ const createImageValidationMiddleware = (fieldName = 'image', uploadPath = 'uplo
       // Salva o arquivo com o nome original enviado pelo frontend
       cb(null, file.originalname);
     }
-    }
   });
   
   // Configure multer with validation
