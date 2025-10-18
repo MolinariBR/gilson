@@ -12,7 +12,7 @@ JWT_SECRET=your_secure_jwt_secret_minimum_32_characters_here
 MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/tomato-delivery-prod
 
 # 3. MercadoPago Token (Opcional - para pagamentos)
-MERCADOPAGO_ACCESS_TOKEN=APP_USR-your_production_mercadopago_access_token_here
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-2459690946384061-101311-b8871994371498590b7aafbe91922328-1829211698
 
 # 4. URLs da Aplicação (Configuração automática para SquareCloud)
 FRONTEND_URL=https://pastel-delivery.squarecloud.app
