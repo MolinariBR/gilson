@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="400" height="300" viewBox="0 0 400 300" role="img" aria-labelledby="title desc">
+  <title id="title">Placeholder: Pastel do Gilson</title>
+  <desc id="desc">Ilustração simples de um pastel com o nome "Pastel do Gilson" abaixo; design para placeholder.</desc>
+
+  <!-- Fundo leve -->
+  <rect width="100%" height="100%" fill="#f4f5f7"/>
+
+  <!-- Sombra do pastel -->
+  <ellipse cx="200" cy="190" rx="90" ry="18" opacity="0.08" />
+
+  <!-- Corpo do pastel (retângulo arredondado) -->
+  <rect x="70" y="60" width="260" height="120" rx="20" ry="20"
+        fill="#FFF5CC" stroke="#E6B44A" stroke-width="4" />
+
+  <!-- Linhas de textura (representando recheio / dobras) -->
+  <g transform="translate(0,0)" stroke="#D9A825" stroke-width="3" stroke-linecap="round" opacity="0.9">
+    <line x1="120" y1="95" x2="170" y2="115" />
+    <line x1="170" y1="85" x2="220" y2="110" />
+    <line x1="220" y1="95" x2="270" y2="115" />
+  </g>
+
+  <!-- Simulação de borda "ondulada" no fundo com linha tracejada para representar a massa fechada -->
+  <line x1="76" y1="178" x2="324" y2="178"
+        stroke="#E6B44A" stroke-width="6" stroke-linecap="round" stroke-dasharray="6 6" opacity="0.95" />
+
+  <!-- Texto abaixo centralizado -->
+  <text x="50%" y="240" text-anchor="middle"
+        font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif"
+        font-size="20" font-weight="600" fill="#333">
+    Pastel do Gilson
+  </text>
+</svg>
