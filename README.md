@@ -142,3 +142,4 @@ Just raise an issue, and we will discuss it.
 
 If you have any feedback, please reach out to me [here](https://www.linkedin.com/in/muhammad-shan-full-stack-developer/)
 # Deploy trigger
+# Force deploy
