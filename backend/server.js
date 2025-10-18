@@ -20,6 +20,10 @@ import imageInconsistencyRouter from "./routes/imageInconsistencyRoutes.js";
 import { createAssetHandler, assetErrorHandler, mimeTypeFixer } from "./middleware/assetHandler.js";
 
 
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 // Serve frontend build assets (dist/assets) para imagens e arquivos estáticos gerados pelo Vite
 app.use("/assets", express.static(path.join(__dirname, "../frontend/dist/assets"), {
@@ -48,9 +52,6 @@ app.use("/assets", express.static(path.join(__dirname, "../frontend/dist/assets"
 }));
 
 
-// Get __dirname equivalent for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Load environment variables from multiple locations
 // First, try to load .env.local for development
