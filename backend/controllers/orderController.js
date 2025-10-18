@@ -10,6 +10,31 @@ if (process.env.MERCADOPAGO_ACCESS_TOKEN) {
   });
 }
 
+// Test MercadoPago configuration
+const testMercadoPago = async (req, res) => {
+  try {
+    const isConfigured = !!client;
+    const tokenExists = !!process.env.MERCADOPAGO_ACCESS_TOKEN;
+    const tokenLength = process.env.MERCADOPAGO_ACCESS_TOKEN ? process.env.MERCADOPAGO_ACCESS_TOKEN.length : 0;
+    
+    res.json({
+      success: true,
+      mercadoPago: {
+        configured: isConfigured,
+        tokenExists: tokenExists,
+        tokenLength: tokenLength,
+        message: isConfigured ? "MercadoPago is configured and ready" : "MercadoPago is not configured"
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ 
+      success: false, 
+      message: "Error testing MercadoPago configuration" 
+    });
+  }
+};
+
 // placing user order for frontend
 const placeOrder = async (req, res) => {
   const frontend_url = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -273,4 +298,4 @@ const updateStatus = async (req, res) => {
   }
 };
 
-export { placeOrder, verifyOrder, userOrders, listOrders, updateStatus, mercadoPagoWebhook };
+export { placeOrder, verifyOrder, userOrders, listOrders, updateStatus, mercadoPagoWebhook, testMercadoPago };

@@ -1,8 +1,11 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.js";
-import { listOrders, placeOrder, updateStatus, userOrders, verifyOrder, mercadoPagoWebhook } from "../controllers/orderController.js";
+import { listOrders, placeOrder, updateStatus, userOrders, verifyOrder, mercadoPagoWebhook, testMercadoPago } from "../controllers/orderController.js";
 
 const orderRouter = express.Router();
+
+// Test MercadoPago configuration (no auth required for testing)
+orderRouter.get("/test-mercadopago", testMercadoPago);
 
 // Order placement with authentication and address validation
 orderRouter.post("/place", authMiddleware, placeOrder);
