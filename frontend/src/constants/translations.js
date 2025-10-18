@@ -143,6 +143,20 @@ export const TRANSLATIONS = {
     serverError: "Erro no servidor. Tente novamente mais tarde.",
     errorFetchingProducts: "Erro! Não foi possível carregar os produtos.",
     errorFetchingCategories: "Erro ao carregar categorias. Usando categorias padrão."
+  },
+
+  // Profile page
+  profile: {
+    title: "Meu Perfil",
+    name: "Nome",
+    whatsapp: "WhatsApp",
+    address: "Endereço",
+    street: "Rua",
+    number: "Número",
+    neighborhood: "Bairro",
+    cep: "CEP",
+    save: "Salvar alterações",
+    loading: "Salvando..."
   }
 };
 

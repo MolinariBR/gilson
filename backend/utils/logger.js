@@ -305,9 +305,13 @@ export const errorHandler = (err, req, res, next) => {
 };
 
 // Capturar erros não tratados do processo
+
 process.on('uncaughtException', (error) => {
   logger.system.error('Exceção não capturada:', error);
-  process.exit(1);
+  // Só encerra o processo se não estiver rodando testes
+  if (process.env.NODE_ENV !== 'test') {
+    process.exit(1);
+  }
 });
 
 process.on('unhandledRejection', (reason, promise) => {

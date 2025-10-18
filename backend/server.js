@@ -716,9 +716,5 @@ app.use((err, req, res, next) => {
 // Middleware de tratamento de erros (deve ser o último)
 app.use(errorHandler);
 
-app.listen(port, () => {
-  logger.app.info(`🚀 Servidor iniciado na porta: ${port}`);
-  logger.app.info(`🌐 Frontend: ${process.env.FRONTEND_URL}`);
-  logger.app.info(`👨‍💼 Admin: ${process.env.ADMIN_URL}`);
-  logger.app.info(`📊 Ambiente: ${process.env.NODE_ENV}`);
-});
+
+export default app;

@@ -3,6 +3,13 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, unique: true, index: true },
+    whatsapp: { type: String, default: "" },
+    address: {
+      street: { type: String, default: "" },
+      number: { type: String, default: "" },
+      neighborhood: { type: String, default: "" },
+      cep: { type: String, default: "" }
+    },
     role: { type: String, default:"user", index: true },
     cartData: { type: Object, default: {} },
   },

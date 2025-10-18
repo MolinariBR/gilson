@@ -1,3 +1,35 @@
+// GET /user/profile - retorna dados do usuário autenticado
+export const getUserProfile = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.userId).lean();
+    if (!user) return res.status(404).json({ success: false, message: "Usuário não encontrado" });
+    res.json({
+      name: user.name,
+      whatsapp: user.whatsapp || "",
+      address: user.address || { street: "", number: "", neighborhood: "", cep: "" }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Erro ao buscar perfil", error: err.message });
+  }
+};
+
+// PUT /user/profile - atualiza dados do usuário autenticado
+export const updateUserProfile = async (req, res) => {
+  try {
+    const { name, whatsapp, address } = req.body;
+    const update = { name, whatsapp, address };
+    const user = await userModel.findByIdAndUpdate(req.userId, update, { new: true, lean: true });
+    if (!user) return res.status(404).json({ success: false, message: "Usuário não encontrado" });
+    res.json({
+      success: true,
+      name: user.name,
+      whatsapp: user.whatsapp || "",
+      address: user.address || { street: "", number: "", neighborhood: "", cep: "" }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Erro ao atualizar perfil", error: err.message });
+  }
+};
 import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 

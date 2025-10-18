@@ -1,7 +1,30 @@
 import express from "express";
-import { loginUser, registerUser } from "../controllers/userController.js";
+import { loginUser, registerUser, getUserProfile, updateUserProfile } from "../controllers/userController.js";
+import jwt from "jsonwebtoken";
+import userModel from "../models/userModel.js";
 
 const userRouter = express.Router();
+
+
+// Middleware simples de autenticação por token JWT (Authorization: Bearer <token>)
+const auth = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ success: false, message: "Token não fornecido" });
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.userId || decoded.id || decoded._id || decoded.sub;
+    next();
+  } catch (err) {
+    return res.status(401).json({ success: false, message: "Token inválido" });
+  }
+};
+
+// Rotas de perfil do usuário autenticado
+userRouter.get("/profile", auth, getUserProfile);
+userRouter.put("/profile", auth, updateUserProfile);
 
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
