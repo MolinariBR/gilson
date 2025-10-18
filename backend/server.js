@@ -432,7 +432,7 @@ connectDB();
 // api endpoints
 app.use("/api/food", foodRouter);
 // Serve uploads directory for static files with optimized caching headers
-app.use("/uploads", express.static("uploads", {
+app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
   maxAge: '1y', // Cache for 1 year
   etag: true,
   lastModified: true,
