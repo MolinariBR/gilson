@@ -11,6 +11,7 @@ import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
 import zoneRouter from "./routes/zoneRoute.js";
 import categoryRouter from "./routes/categoryRoute.js";
+import driverRouter from "./routes/driverRoute.js";
 import { logger, errorHandler } from "./utils/logger.js";
 import testRouter from "./routes/testRoute.js";
 import debugRouter from "./routes/debugRoute.js";
@@ -23,12 +24,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load environment variables from multiple locations
-if (process.env.NODE_ENV === 'development') {
-  dotenv.config({ path: path.join(__dirname, '.env.local') }); // backend/.env.local (desenvolvimento)
+// First, try to load .env.local for development
+dotenv.config({ path: path.join(__dirname, '.env.local') });
+
+// Check if we're in development mode based on loaded NODE_ENV
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+if (isDevelopment) {
+  // In development, we already loaded .env.local, which should have all we need
+  console.log('🔧 Development mode: using .env.local configuration');
 } else {
-  dotenv.config({ path: path.join(__dirname, '.env') }); // backend/.env (produção)
+  // In production, load the production .env file
+  dotenv.config({ path: path.join(__dirname, '.env') });
+  // And the root .env as fallback
+  dotenv.config({ path: path.join(__dirname, '..', '.env') });
 }
-dotenv.config({ path: path.join(__dirname, '..', '.env') }); // root .env (fallback)
 
 // Log loaded environment variables
 logger.system.info('Carregando variáveis de ambiente...');
@@ -174,7 +184,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'token', 'x-signature', 'x-request-id']
+  allowedHeaders: ['Content-Type', 'Authorization', 'token', 'x-signature', 'x-request-id', 'cache-control']
 };
 
 app.use(cors(corsOptions));
@@ -487,6 +497,7 @@ app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/zone", zoneRouter);
 app.use("/api", categoryRouter);
+app.use("/api", driverRouter);
 app.use("/api/debug", debugRouter);
 app.use("/api/admin/image-health", imageInconsistencyRouter);
 

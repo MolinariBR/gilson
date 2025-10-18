@@ -48,7 +48,25 @@ const MyOrders = () => {
                 <span>&#x25cf;</span>
                 <b> {getOrderStatusTranslation(order.status)}</b>
               </p>
-              <button onClick={fetchOrders}>{TRANSLATIONS.order.trackOrder}</button>
+              {order.driver ? (
+                <div className="driver-info">
+                  <p className="driver-name">{TRANSLATIONS.order.driver}: {order.driver.name}</p>
+                  <a
+                    href={`https://wa.me/${order.driver.whatsapp}?text=${encodeURIComponent(
+                      `Olá ${order.driver.name}, estou acompanhando meu pedido #${order._id.slice(-6)}`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="track-button whatsapp"
+                  >
+                    {TRANSLATIONS.order.contactDriver}
+                  </a>
+                </div>
+              ) : (
+                <button className="track-button disabled" disabled>
+                  {TRANSLATIONS.order.driverNotAssigned}
+                </button>
+              )}
             </div>
           );
         })}

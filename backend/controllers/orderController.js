@@ -236,7 +236,7 @@ const mercadoPagoWebhook = async (req, res) => {
 // user orders for frontend
 const userOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({ userId: req.body.userId });
+    const orders = await orderModel.find({ userId: req.body.userId }).populate('driver', 'name phone whatsapp');
     res.json({ success: true, data: orders });
   } catch (error) {
     console.log(error);
@@ -249,7 +249,7 @@ const listOrders = async (req, res) => {
   try {
     let userData = await userModel.findById(req.body.userId);
     if (userData && userData.role === "admin") {
-      const orders = await orderModel.find({});
+      const orders = await orderModel.find({}).populate('driver', 'name phone whatsapp');
       
       // Enrich orders with customer names if missing
       const enrichedOrders = await Promise.all(orders.map(async (order) => {
@@ -298,4 +298,45 @@ const updateStatus = async (req, res) => {
   }
 };
 
-export { placeOrder, verifyOrder, userOrders, listOrders, updateStatus, mercadoPagoWebhook, testMercadoPago };
+// Assign driver to order (Admin only)
+const assignDriver = async (req, res) => {
+  try {
+    let userData = await userModel.findById(req.body.userId);
+    if (!userData || userData.role !== "admin") {
+      return res.json({ success: false, message: "You are not an admin" });
+    }
+
+    const { orderId, driverId } = req.body;
+
+    if (!orderId) {
+      return res.json({ success: false, message: "Order ID is required" });
+    }
+
+    // If driverId is provided, validate that driver exists and is active
+    if (driverId) {
+      const driverModel = (await import("../models/driverModel.js")).default;
+      const driver = await driverModel.findById(driverId);
+      if (!driver) {
+        return res.json({ success: false, message: "Driver not found" });
+      }
+      if (driver.status !== 'active') {
+        return res.json({ success: false, message: "Driver is not active" });
+      }
+    }
+
+    // Update order with driver assignment
+    await orderModel.findByIdAndUpdate(orderId, {
+      driver: driverId || null
+    });
+
+    res.json({
+      success: true,
+      message: driverId ? "Driver assigned successfully" : "Driver removed successfully"
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Error assigning driver" });
+  }
+};
+
+export { placeOrder, verifyOrder, userOrders, listOrders, updateStatus, assignDriver, mercadoPagoWebhook, testMercadoPago };

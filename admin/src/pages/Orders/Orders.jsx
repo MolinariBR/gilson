@@ -14,6 +14,7 @@ const Orders = ({ url }) => {
   const navigate = useNavigate();
   const { token, admin } = useContext(StoreContext);
   const [orders, setOrders] = useState([]);
+  const [drivers, setDrivers] = useState([]);
 
   const fetchAllOrder = async () => {
     const response = await axios.get(url + "/api/order/list", {
@@ -21,6 +22,19 @@ const Orders = ({ url }) => {
     });
     if (response.data.success) {
       setOrders(response.data.data);
+    }
+  };
+
+  const fetchAllDrivers = async () => {
+    try {
+      const response = await axios.get(url + "/api/drivers", {
+        headers: { token },
+      });
+      if (response.data.success) {
+        setDrivers(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching drivers:', error);
     }
   };
 
@@ -40,12 +54,36 @@ const Orders = ({ url }) => {
       toast.error(getAdminTranslation('orders.errorUpdatingStatus', 'Error updating order status'));
     }
   };
+
+  const driverHandler = async (event, orderId) => {
+    const driverId = event.target.value;
+    try {
+      const response = await axios.post(
+        url + "/api/order/assign-driver",
+        {
+          orderId,
+          driverId: driverId === 'none' ? null : driverId,
+        },
+        { headers: { token } }
+      );
+      if (response.data.success) {
+        toast.success(response.data.message);
+        await fetchAllOrder();
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      console.error('Error assigning driver:', error);
+      toast.error(getAdminTranslation('orders.errorUpdatingStatus', 'Error updating order'));
+    }
+  };
   useEffect(() => {
     if (!admin && !token) {
       toast.error(getAdminTranslation('authentication.pleaseLoginFirst', 'Please Login First'));
       navigate("/");
     }
     fetchAllOrder();
+    fetchAllDrivers();
   }, []);
 
   return (
@@ -98,14 +136,33 @@ const Orders = ({ url }) => {
             </div>
             <p>{getAdminTranslation('orders.items', 'Items')}: {order.items.length}</p>
             <p>${order.amount}</p>
-            <select
-              onChange={(event) => statusHandler(event, order._id)}
-              value={order.status}
-            >
-              <option value="Food Processing">{getAdminTranslation('orders.foodProcessing', 'Food Processing')}</option>
-              <option value="Out for delivery">{getAdminTranslation('orders.outForDelivery', 'Out for delivery')}</option>
-              <option value="Delivered">{getAdminTranslation('orders.delivered', 'Delivered')}</option>
-            </select>
+            <div className="order-controls">
+              <div className="control-group">
+                <label>{getAdminTranslation('orders.status', 'Status')}:</label>
+                <select
+                  onChange={(event) => statusHandler(event, order._id)}
+                  value={order.status}
+                >
+                  <option value="Food Processing">{getAdminTranslation('orders.foodProcessing', 'Food Processing')}</option>
+                  <option value="Out for delivery">{getAdminTranslation('orders.outForDelivery', 'Out for delivery')}</option>
+                  <option value="Delivered">{getAdminTranslation('orders.delivered', 'Delivered')}</option>
+                </select>
+              </div>
+              <div className="control-group">
+                <label>{getAdminTranslation('drivers.driver', 'Driver')}:</label>
+                <select
+                  onChange={(event) => driverHandler(event, order._id)}
+                  value={order.driver ? order.driver._id : 'none'}
+                >
+                  <option value="none">{getAdminTranslation('drivers.none', 'None')}</option>
+                  {drivers.map((driver) => (
+                    <option key={driver._id} value={driver._id}>
+                      {driver.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         ))}
       </div>

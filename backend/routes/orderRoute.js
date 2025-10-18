@@ -1,6 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/auth.js";
-import { listOrders, placeOrder, updateStatus, userOrders, verifyOrder, mercadoPagoWebhook, testMercadoPago } from "../controllers/orderController.js";
+import { listOrders, placeOrder, updateStatus, userOrders, verifyOrder, assignDriver, mercadoPagoWebhook, testMercadoPago } from "../controllers/orderController.js";
 
 const orderRouter = express.Router();
 
@@ -18,6 +18,7 @@ orderRouter.post("/webhook", mercadoPagoWebhook);
 
 // Admin routes with authentication
 orderRouter.post("/status", authMiddleware, updateStatus);
+orderRouter.post("/assign-driver", authMiddleware, assignDriver);
 orderRouter.get("/list", authMiddleware, listOrders);
 
 // User-specific routes with authentication

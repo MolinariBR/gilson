@@ -19,6 +19,10 @@ const Sidebar = () => {
           <img src={assets.order_icon} alt="" />
           <p>{getAdminTranslation('navigation.orders', 'Orders')}</p>
         </NavLink>
+        <NavLink to='drivers' className="sidebar-option">
+          <img src={assets.parcel_icon} alt="" />
+          <p>{getAdminTranslation('navigation.drivers', 'Drivers')}</p>
+        </NavLink>
         <NavLink to='zones' className="sidebar-option">
           <img src={assets.parcel_icon} alt="" />
           <p>{getAdminTranslation('navigation.deliveryZones', 'Delivery Zones')}</p>

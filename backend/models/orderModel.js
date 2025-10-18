@@ -51,7 +51,8 @@ const orderSchema = new mongoose.Schema({
   // Keep the old date field for backward compatibility during migration
   date: { type: Date, default: Date.now },
   payment: { type: Boolean, default: false },
-  mercadoPagoId: { type: String }
+  mercadoPagoId: { type: String },
+  driver: { type: mongoose.Schema.Types.ObjectId, ref: 'driver', required: false }
 });
 
 // Configure schema options for enhanced timestamp handling

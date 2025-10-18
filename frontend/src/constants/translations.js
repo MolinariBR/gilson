@@ -72,6 +72,9 @@ export const TRANSLATIONS = {
     orders: "Pedidos",
     items: "itens",
     trackOrder: "Rastrear Pedido",
+    driver: "Entregador",
+    contactDriver: "Falar com Entregador",
+    driverNotAssigned: "Entregador ainda não definido",
     // Order status translations
     status: {
       paid: "Pago",

@@ -20,6 +20,7 @@ export const ADMIN_TRANSLATIONS = {
     addItems: "Adicionar Itens",
     listItems: "Listar Itens", 
     orders: "Pedidos",
+    drivers: "Entregadores",
     deliveryZones: "Zonas de Entrega",
     categories: "Categorias"
   },
@@ -48,21 +49,22 @@ export const ADMIN_TRANSLATIONS = {
   },
 
   // Orders Management
-  orders: {
-    orderPage: "Página de Pedidos",
-    items: "Itens",
-    customer: "Cliente",
-    phone: "Telefone",
-    customerPhone: "Telefone do Cliente",
-    foodProcessing: "Processando Comida",
-    outForDelivery: "Saiu para Entrega",
-    delivered: "Entregue",
-    printOrder: "Imprimir Pedido",
-    printSuccess: "Pedido impresso com sucesso",
-    printError: "Erro ao imprimir pedido",
-    statusUpdated: "Status do pedido atualizado com sucesso",
-    errorUpdatingStatus: "Erro ao atualizar status do pedido"
-  },
+   orders: {
+     orderPage: "Página de Pedidos",
+     items: "Itens",
+     customer: "Cliente",
+     phone: "Telefone",
+     customerPhone: "Telefone do Cliente",
+     status: "Status",
+     foodProcessing: "Processando Comida",
+     outForDelivery: "Saiu para Entrega",
+     delivered: "Entregue",
+     printOrder: "Imprimir Pedido",
+     printSuccess: "Pedido impresso com sucesso",
+     printError: "Erro ao imprimir pedido",
+     statusUpdated: "Status do pedido atualizado com sucesso",
+     errorUpdatingStatus: "Erro ao atualizar status do pedido"
+   },
 
   // Zones Management
   zones: {
@@ -96,6 +98,37 @@ export const ADMIN_TRANSLATIONS = {
     errorDeletingZone: "Erro ao excluir zona",
     errorFetchingZones: "Erro ao buscar zonas",
     errorSavingZone: "Erro ao salvar zona"
+  },
+
+  // Drivers Management
+  drivers: {
+    driverManagement: "Gerenciamento de Entregadores",
+    addDriver: "Adicionar Entregador",
+    editDriver: "Editar Entregador",
+    driverName: "Nome do Entregador",
+    phone: "Telefone",
+    whatsapp: "WhatsApp",
+    status: "Status",
+    actions: "Ações",
+    active: "Ativo",
+    inactive: "Inativo",
+    edit: "Editar",
+    delete: "Excluir",
+    add: "Adicionar",
+    update: "Atualizar",
+    cancel: "Cancelar",
+    name: "Nome",
+    fillAllFields: "Por favor, preencha todos os campos",
+    added: "Entregador adicionado com sucesso",
+    updated: "Entregador atualizado com sucesso",
+    deleted: "Entregador excluído com sucesso",
+    error: "Erro",
+    errorLoading: "Erro ao carregar entregadores",
+    errorDeleting: "Erro ao excluir entregador",
+    confirmDelete: "Tem certeza que deseja excluir este entregador?",
+    noDrivers: "Nenhum entregador encontrado",
+    driver: "Entregador",
+    none: "Nenhum"
   },
 
   // Categories (matching frontend categories)
