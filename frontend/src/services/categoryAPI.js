@@ -102,14 +102,13 @@ class CategoryAPI {
    */
   getCategoryImageURL(imagePath) {
     if (!imagePath) return '';
-    
-    // If it's already a full URL, return as is
+    // Se já for URL completa, retorna como está
     if (imagePath.startsWith('http')) {
       return imagePath;
     }
-    
-    // Construct full URL
-    return `${this.baseURL}${imagePath}`;
+    // Garante que o caminho sempre comece com /uploads/
+    let normalizedPath = imagePath.startsWith('/uploads/') ? imagePath : `/uploads/${imagePath.replace(/^\/+/, '')}`;
+    return `${this.baseURL}${normalizedPath}`;
   }
 }
 
