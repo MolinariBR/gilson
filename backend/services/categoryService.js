@@ -690,7 +690,7 @@ class CategoryService {
       if (hasProducts) {
         return {
           success: false,
-          message: "Categoria não pode ser removida pois possui produtos associados",
+          message: "Não é possível excluir esta categoria porque existem produtos vinculados a ela. Remova ou altere os produtos antes de excluir a categoria.",
           code: "CATEGORY_HAS_PRODUCTS"
         };
       }
