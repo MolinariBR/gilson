@@ -75,7 +75,12 @@ const Categories = ({ url }) => {
       }
     } catch (error) {
       console.error('Error deleting category:', error);
-      toast.error(getAdminTranslation('categories.errorDeletingCategory', 'Error deleting category'));
+      // Exibe mensagem detalhada do backend se disponível
+      if (error.response && error.response.data && error.response.data.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error(getAdminTranslation('categories.errorDeletingCategory', 'Error deleting category'));
+      }
     }
   };
 

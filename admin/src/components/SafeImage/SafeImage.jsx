@@ -109,7 +109,11 @@ const SafeImage = ({
       setImageSrc(resolvedUrl);
     } else {
       // No valid source, use category-specific fallback
-      const categoryFallback = isCategory ? '/placeholder-category.svg' : fallback;
+      let categoryFallback = isCategory ? '/placeholder-category.svg' : fallback;
+      // Garante que não haja barras duplicadas
+      if (categoryFallback.startsWith('/')) {
+        categoryFallback = (baseUrl ? baseUrl : '') + categoryFallback;
+      }
       setImageSrc(categoryFallback);
       setIsLoading(false);
     }
