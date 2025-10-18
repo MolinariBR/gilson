@@ -1,4 +1,3 @@
-
 import express from "express";
 import cors from "cors";
 import path from "path";
@@ -683,7 +682,7 @@ app.use(assetErrorHandler);
 app.use((err, req, res, next) => {
   // Log do erro
   logger.system.error(`Erro na requisição ${req.method} ${req.url}:`, err);
-  
+
   // Tratar diferentes tipos de erro
   if (err.code === 'TIMEOUT' || err.message.includes('timeout')) {
     return res.status(408).json({
@@ -692,7 +691,7 @@ app.use((err, req, res, next) => {
       error: 'TIMEOUT'
     });
   }
-  
+
   if (err.code === 'ECONNRESET' || err.code === 'ECONNABORTED') {
     return res.status(503).json({
       success: false,
@@ -700,7 +699,7 @@ app.use((err, req, res, next) => {
       error: 'CONNECTION_ERROR'
     });
   }
-  
+
   if (err.message && err.message.includes('CORS')) {
     return res.status(403).json({
       success: false,
@@ -708,7 +707,7 @@ app.use((err, req, res, next) => {
       error: 'CORS_ERROR'
     });
   }
-  
+
   // Passar para o próximo handler de erro
   next(err);
 });
@@ -716,5 +715,9 @@ app.use((err, req, res, next) => {
 // Middleware de tratamento de erros (deve ser o último)
 app.use(errorHandler);
 
+// Inicia o servidor escutando em 0.0.0.0 para compatibilidade local e produção
+app.listen(port, '0.0.0.0', () => {
+  logger.system.info(`🚀 Servidor rodando em http://0.0.0.0:${port} (env: ${process.env.NODE_ENV})`);
+});
 
 export default app;
