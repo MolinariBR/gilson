@@ -39,7 +39,7 @@ export const isCategoryImage = (imagePath) => {
   if (!imagePath) return false;
   
   // Check if path contains category indicators
-  return imagePath.includes('/categories/') || 
+  return imagePath.includes('/uploads/') || 
          imagePath.includes('cat_') ||
          imagePath.includes('category_');
 };

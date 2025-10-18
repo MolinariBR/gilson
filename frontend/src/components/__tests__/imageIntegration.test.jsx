@@ -59,7 +59,7 @@ describe('Frontend Image Integration Tests', () => {
       {
         _id: '1',
         name: 'Test Category 1',
-        image: '/uploads/categories/cat1.jpg'
+  image: '/uploads/cat1.jpg'
       },
       {
         _id: '2',
@@ -312,7 +312,7 @@ describe('Frontend Image Integration Tests', () => {
           img.src.includes('cat1.jpg')
         );
         expect(firstCategoryImg).toBeTruthy();
-        expect(firstCategoryImg.src).toBe('http://localhost:4000/uploads/categories/cat1.jpg');
+  expect(firstCategoryImg.src).toBe('http://localhost:4000/uploads/cat1.jpg');
       });
     });
 
@@ -327,7 +327,7 @@ describe('Frontend Image Integration Tests', () => {
           img.src.includes('cat2.jpg')
         );
         expect(secondCategoryImg).toBeTruthy();
-        expect(secondCategoryImg.src).toBe('http://localhost:4000/uploads/categories/cat2.jpg');
+  expect(secondCategoryImg.src).toBe('http://localhost:4000/uploads/cat2.jpg');
       });
     });
 

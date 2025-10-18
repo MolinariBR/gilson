@@ -64,7 +64,7 @@ describe('Admin Image Integration Tests', () => {
       _id: '1',
       name: 'Test Category 1',
       description: 'Test Description 1',
-      image: '/uploads/categories/cat1.jpg',
+  image: '/uploads/cat1.jpg',
       isActive: true
     },
     {
@@ -118,7 +118,7 @@ describe('Admin Image Integration Tests', () => {
     it('should display image with correct resolved URL', async () => {
       const { container } = render(
         <SafeImage
-          src="/uploads/categories/test-image.jpg"
+          src="/uploads/test-image.jpg"
           baseUrl="http://localhost:4000"
           alt="Test Category Image"
           data-testid="safe-image"
@@ -128,7 +128,7 @@ describe('Admin Image Integration Tests', () => {
       await waitFor(() => {
         const img = container.querySelector('img');
         expect(img).toBeTruthy();
-        expect(img.src).toBe('http://localhost:4000/uploads/categories/test-image.jpg');
+  expect(img.src).toBe('http://localhost:4000/uploads/test-image.jpg');
         expect(img.alt).toBe('Test Category Image');
       });
     });
@@ -138,7 +138,7 @@ describe('Admin Image Integration Tests', () => {
       
       render(
         <SafeImage
-          src="/uploads/categories/nonexistent-image.jpg"
+          src="/uploads/nonexistent-image.jpg"
           baseUrl="http://localhost:4000"
           fallback="/placeholder-category.png"
           alt="Test Category Image"
@@ -180,7 +180,7 @@ describe('Admin Image Integration Tests', () => {
       await waitFor(() => {
         const img = screen.getByAltText(category.name);
         expect(img).toBeTruthy();
-        expect(img.src).toBe('http://localhost:4000/uploads/categories/cat1.jpg');
+  expect(img.src).toBe('http://localhost:4000/uploads/cat1.jpg');
       });
 
       // Check category details
@@ -204,7 +204,7 @@ describe('Admin Image Integration Tests', () => {
 
       await waitFor(() => {
         const img = screen.getByAltText(category.name);
-        expect(img.src).toBe('http://localhost:4000/uploads/categories/cat2.jpg');
+  expect(img.src).toBe('http://localhost:4000/uploads/cat2.jpg');
       });
     });
 
@@ -292,7 +292,7 @@ describe('Admin Image Integration Tests', () => {
         
         // First category should have correct image
         const firstImg = screen.getByAltText('Test Category 1');
-        expect(firstImg.src).toBe('http://localhost:4000/uploads/categories/cat1.jpg');
+  expect(firstImg.src).toBe('http://localhost:4000/uploads/cat1.jpg');
       });
     });
 
@@ -433,7 +433,7 @@ describe('Admin Image Integration Tests', () => {
     it('should handle image load failures in category cards', async () => {
       const category = {
         ...mockCategories[0],
-        image: '/uploads/categories/broken-image.jpg'
+  image: '/uploads/broken-image.jpg'
       };
       
       render(
@@ -480,7 +480,7 @@ describe('Admin Image Integration Tests', () => {
         _id: `cat-${i}`,
         name: `Category ${i}`,
         description: `Description ${i}`,
-        image: `/uploads/categories/cat${i}.jpg`,
+  image: `/uploads/cat${i}.jpg`,
         isActive: true
       }));
 
@@ -522,7 +522,7 @@ describe('Admin Image Integration Tests', () => {
       for (let i = 1; i <= 10; i++) {
         const updatedCategory = {
           ...category,
-          image: `/uploads/categories/cat${i}.jpg`
+          image: `/uploads/cat${i}.jpg`
         };
         
         rerender(
@@ -539,7 +539,7 @@ describe('Admin Image Integration Tests', () => {
       await waitFor(() => {
         const img = screen.getByAltText(category.name);
         expect(img).toBeTruthy();
-        expect(img.src).toBe('http://localhost:4000/uploads/categories/cat10.jpg');
+  expect(img.src).toBe('http://localhost:4000/uploads/cat10.jpg');
       });
     });
   });

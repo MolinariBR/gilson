@@ -38,13 +38,13 @@ describe('Simple Image Integration Tests', () => {
     it('should resolve category image URLs correctly', () => {
       const testCases = [
         {
-          input: '/uploads/categories/cat1.jpg',
-          expected: 'http://localhost:4000/uploads/categories/cat1.jpg',
-          description: 'category path with /uploads/categories/'
+          input: '/uploads/cat1.jpg',
+          expected: 'http://localhost:4000/uploads/cat1.jpg',
+          description: 'category path with /uploads/'
         },
         {
           input: 'categories/cat1.jpg',
-          expected: 'http://localhost:4000/uploads/categories/cat1.jpg',
+          expected: 'http://localhost:4000/uploads/cat1.jpg',
           description: 'relative category path'
         }
       ];
@@ -88,7 +88,7 @@ describe('Simple Image Integration Tests', () => {
     it('should validate safe image paths', () => {
       const validPaths = [
         '/uploads/food1.jpg',
-        '/uploads/categories/cat1.png',
+  '/uploads/cat1.png',
         'food1.jpg',
         'categories/cat1.png',
         'https://example.com/image.jpg',
@@ -133,7 +133,7 @@ describe('Simple Image Integration Tests', () => {
         },
         {
           input: 'categories/cat1.png',
-          expected: '/uploads/categories/cat1.png',
+          expected: '/uploads/cat1.png',
           description: 'relative category path'
         },
         {
@@ -263,8 +263,8 @@ describe('Simple Image Integration Tests', () => {
         },
         {
           name: 'Category with subdirectory',
-          input: '/uploads/categories/italian-food.png',
-          expected: 'http://localhost:4000/uploads/categories/italian-food.png'
+          input: '/uploads/italian-food.png',
+          expected: 'http://localhost:4000/uploads/italian-food.png'
         },
         {
           name: 'Legacy relative path',
