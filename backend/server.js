@@ -1,3 +1,5 @@
+
+import express from "express";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
@@ -13,9 +15,12 @@ import categoryRouter from "./routes/categoryRoute.js";
 import driverRouter from "./routes/driverRoute.js";
 import { logger, errorHandler } from "./utils/logger.js";
 import testRouter from "./routes/testRoute.js";
+import debugRouter from "./routes/debugRoute.js";
+import imageInconsistencyRouter from "./routes/imageInconsistencyRoutes.js";
+import { createAssetHandler, assetErrorHandler, mimeTypeFixer } from "./middleware/assetHandler.js";
+
 
 const app = express();
-
 // Serve frontend build assets (dist/assets) para imagens e arquivos estáticos gerados pelo Vite
 app.use("/assets", express.static(path.join(__dirname, "../frontend/dist/assets"), {
   maxAge: '1y',
@@ -41,25 +46,6 @@ app.use("/assets", express.static(path.join(__dirname, "../frontend/dist/assets"
     }
   }
 }));
-import express from "express";
-import cors from "cors";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
-import { connectDB } from "./config/db.js";
-import foodRouter from "./routes/foodRoute.js";
-import userRouter from "./routes/userRoute.js";
-import cartRouter from "./routes/cartRoute.js";
-import orderRouter from "./routes/orderRoute.js";
-import zoneRouter from "./routes/zoneRoute.js";
-import categoryRouter from "./routes/categoryRoute.js";
-import driverRouter from "./routes/driverRoute.js";
-import { logger, errorHandler } from "./utils/logger.js";
-import testRouter from "./routes/testRoute.js";
-import debugRouter from "./routes/debugRoute.js";
-import imageInconsistencyRouter from "./routes/imageInconsistencyRoutes.js";
-import { createAssetHandler, assetErrorHandler, mimeTypeFixer } from "./middleware/assetHandler.js";
 
 
 // Get __dirname equivalent for ES modules
