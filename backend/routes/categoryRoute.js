@@ -43,8 +43,8 @@ import {
 
 const categoryRouter = express.Router();
 
-// Create image validation middleware for category images
-const categoryImageValidation = createImageValidationMiddleware('image', 'uploads/categories');
+// Create image validation middleware for category images (direto em uploads/)
+const categoryImageValidation = createImageValidationMiddleware('image', 'uploads');
 
 // Apply global middleware to all routes
 categoryRouter.use(setSecurityHeaders);
