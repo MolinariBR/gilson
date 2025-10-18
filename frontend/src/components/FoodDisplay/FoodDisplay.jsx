@@ -11,6 +11,7 @@ const FoodDisplay = ({ category }) => {
       <h2>{TRANSLATIONS.menu.topDishes}</h2>
       <div className="food-display-list">
         {food_list.map((item, index) => {
+          if (!item || typeof item !== 'object') return null;
           if ((category === "All" || category === item.category))
             return (
               <FoodItem
@@ -18,7 +19,7 @@ const FoodDisplay = ({ category }) => {
                 id={item._id}
                 name={item.name}
                 description={item.description}
-                price={item.price}
+                price={item.price ?? 0}
                 image={item.image}
               />
             );
