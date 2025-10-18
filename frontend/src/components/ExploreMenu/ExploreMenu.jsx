@@ -69,6 +69,8 @@ const ExploreMenu = ({category, setCategory}) => {
 
   // Use dynamic categories
   const categoriesToRender = categories;
+  // Log para depuração: exibir todos os nomes das categorias recebidas
+  console.log('Categorias para renderizar:', categoriesToRender.map(c => c.menu_name));
 
   return (
     <div className="explore-menu" id="explore-menu">
