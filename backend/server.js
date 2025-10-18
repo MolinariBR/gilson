@@ -1,3 +1,28 @@
+// Serve frontend build assets (dist/assets) para imagens e arquivos estáticos gerados pelo Vite
+app.use("/assets", express.static(path.join(__dirname, "../frontend/dist/assets"), {
+  maxAge: '1y',
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeTypes = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+      '.svg': 'image/svg+xml',
+      '.css': 'text/css',
+      '.js': 'application/javascript'
+    };
+    if (mimeTypes[ext]) {
+      res.setHeader('Content-Type', mimeTypes[ext]);
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('Vary', 'Accept-Encoding');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+    }
+  }
+}));
 import express from "express";
 import cors from "cors";
 import path from "path";
